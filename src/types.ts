@@ -2,10 +2,15 @@ export const SHOPIFY_TYPE_PRODUCT = 'product';
 export const SHOPIFY_TYPE_COLLECTION = 'collection';
 export const SHOPIFY_TYPE_PAGE = 'page';
 
-export type ShopifyType = (
+export type ShopifyTypeStr = (
     typeof SHOPIFY_TYPE_PRODUCT |
     typeof SHOPIFY_TYPE_COLLECTION |
     typeof SHOPIFY_TYPE_PAGE);
+
+export type ShopifyType<H extends string> = (
+    Product<H> | Collection<H> | Page<H>);
+
+type Expires = { __ts: number };
 
 /**
  * Type definitions for the core Shopify JSON representations.
@@ -13,7 +18,7 @@ export type ShopifyType = (
  * These definitions are based on Shopify's web JSON API,
  * and certainly has the possibility for change (without notice).
  */
-export type Product<H> = {
+export type Product<H> = Expires & {
     id: number,
     handle: H,
     body_html: string | null,
@@ -79,12 +84,27 @@ export type Variant = {
     requires_shipping: boolean,
 };
 
-export type Page<H> = {
+export type Page<H> = Expires & {
     id: number,
-    handle: string,
+    title: string, 
+    handle: H,
 
+    body_html: string,
+    created_at: Date,
+    published_at: Date,
+    updated_at: Date,
 };
 
-export type Collection<str> = {
+export type Collection<H> = Expires & {
+    id: number,
+    title: string,
+    handle: H,
+    description: string,
+    published_at: Date,
+    updated_at: Date,
+    image: Image,
+    products_count: number,
 
+    // This is a field provided by this API only
+    products: Product<string>[],
 }

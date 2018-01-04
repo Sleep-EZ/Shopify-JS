@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <script src="../dist/browser.js"></script>
+    </head>
+
+    <body>
+        <h1 id="title"></h1>
+        <h4 id="handle"></h4>
+    </body>
+
+    <script type="text/javascript">
+        var Shopify = window.ShopifyJS;
+
+        function writeCache(client) {
+            console.log('Retrieved collections')
+            console.log('WRITE: ', client.cache._cache);
+
+            Shopify.CacheLoader.writeCache(client.cache);
+        }
+
+        function createClient(cache) {
+            console.log('LOAD: ', cache);
+
+            var client = new Shopify.Client({
+                domain: 'sleep-ez.myshopify.com',
+                cache: cache,
+            });
+
+            console.log(client);
+
+            client.getCollection('latex-mattresses')
+                .then(function() { writeCache(client); })
+                .catch(function(e) { console.log(e); });
+        }
+
+        Shopify.CacheLoader.restoreCache()
+            .then(createClient)
+            .catch(function(e) { console.log(e); });
+    </script>
+</html>

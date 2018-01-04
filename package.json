@@ -1,12 +1,21 @@
 {
   "name": "shopify-js",
   "version": "0.0.1",
+  "browser": "dist/browser.js",
+  "main": "dist/npm.js",
   "dependencies": {
+    "localforage": "^1.5.5",
     "typescript": "^2.6.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.0.0-beta.36",
-    "@babel/preset-env": "^7.0.0-beta.36",
-    "@babel/preset-typescript": "^7.0.0-beta.36"
+    "@types/core-js": "^0.9.44",
+    "awesome-typescript-loader": "^3.4.1",
+    "source-map-loader": "^0.2.3",
+    "unfetch": "^3.0.0",
+    "webpack": "^3.10.0"
+  },
+  "scripts": {
+    "build": "NODE_ENV=production webpack",
+    "watch": "webpack --progress --watch"
   }
 }
