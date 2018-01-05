@@ -1,4 +1,14 @@
-/******/ (function(modules) { // webpackBootstrap
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory();
+	else if(typeof define === 'function' && define.amd)
+		define([], factory);
+	else if(typeof exports === 'object')
+		exports["shopify-js"] = factory();
+	else
+		root["shopify-js"] = factory();
+})(typeof self !== 'undefined' ? self : this, function() {
+return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
 /******/
@@ -60,11 +70,252 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 9);
+/******/ 	return __webpack_require__(__webpack_require__.s = 5);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SHOPIFY_TYPE_PRODUCT = 'product';
+exports.SHOPIFY_TYPE_COLLECTION = 'collection';
+exports.SHOPIFY_TYPE_PAGE = 'page';
+exports.VALID_SHOPIFY_TYPES = [
+    exports.SHOPIFY_TYPE_PRODUCT,
+    exports.SHOPIFY_TYPE_PAGE,
+    exports.SHOPIFY_TYPE_COLLECTION,
+];
+
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var lib_1 = __webpack_require__(2);
+var types_1 = __webpack_require__(0);
+/**
+ * This will be the key that will be suffixed to every
+ * complete Shopify cache entry that is saved in the cache.
+ *
+ * The current UNIX (epoch) timestamp is stored to allow
+ * for cached items to expire after a short period of time,
+ * ensuring accuracy.
+ */
+exports.OBJ_CACHE_TS_KEY = '__ts';
+exports.OBJ_CACHE_DEFAULT_CACHE_EXPIRY = 300; // 5 minutes
+exports.OBJ_CACHE_DEFAULT_DATA = (_a = {},
+    _a[types_1.SHOPIFY_TYPE_PRODUCT] = {},
+    _a[types_1.SHOPIFY_TYPE_PAGE] = {},
+    _a[types_1.SHOPIFY_TYPE_COLLECTION] = {},
+    _a);
+exports.OBJ_CACHE_DEFAULT_OPTS = {
+    cacheTimeout: exports.OBJ_CACHE_DEFAULT_CACHE_EXPIRY,
+};
+var Cache = /** @class */ (function () {
+    function Cache(options, cache) {
+        var defaultOpts = exports.OBJ_CACHE_DEFAULT_OPTS;
+        this.options = __assign({}, defaultOpts, options);
+        this._cache = cache || exports.OBJ_CACHE_DEFAULT_DATA;
+    }
+    /**
+     * Returns a copied instance of the current internal
+     * raw cache object. This function is primarily intended
+     * to be used by the given `StorageInterface` class.
+     *
+     * @return {CacheData}    A copy of the current cache
+     */
+    Cache.prototype.readCache = function () { return __assign({}, this._cache); };
+    /**
+     * Replaces the current cache data instance with a provided
+     * one. This function is primarily intended to be used for
+     * loading existing cache objects (pre-warmed).
+     *
+     * @param {CacheData} cache   The object cache to apply
+     * @return {void}
+     */
+    Cache.prototype.writeCache = function (cache) { this._cache = __assign({}, cache); };
+    Cache.prototype._try_remove_expired_entry = function (type, handle) {
+        var now = lib_1.getCurrentEpoch();
+        var entry = this._cache[type][handle];
+        // There is no entry, thus it is not valid / is invalidated
+        if (!entry)
+            return true;
+        if ((now - entry['__ts']) / 1000 > this.options.cacheTimeout) {
+            // Delete the entry
+            delete this._cache[type][handle];
+            return true;
+        }
+        // The cached entry is still valid
+        return false;
+    };
+    /**
+     * Search the Shopify cache for a specific item.
+     *
+     * @param {ShopifyTypeStr}  type    The Shopify type to find
+     * @param {string}          handle  The handle of the item we're searching for
+     *
+     * @return {ShopifyType | null}     Returns the result of the lookup (if it's in the cache)
+     */
+    Cache.prototype.fetch = function (type, handle) {
+        /**
+         * Looks up an item to see if it has expired in our cache.
+         * In the case it has, we delete the data from the cache
+         * before we attempt to access it.
+         */
+        this._try_remove_expired_entry(type, handle);
+        var resolveFn = (_a = {},
+            _a[types_1.SHOPIFY_TYPE_PRODUCT] = '_fetch_product',
+            _a[types_1.SHOPIFY_TYPE_COLLECTION] = '_fetch_collection',
+            _a[types_1.SHOPIFY_TYPE_PAGE] = '_fetch_page',
+            _a.default = function () { return (null); },
+            _a)[type];
+        return this[resolveFn](handle);
+        var _a;
+    };
+    Cache.prototype._fetch_product = function (handle) {
+        return this._cache[types_1.SHOPIFY_TYPE_PRODUCT][handle];
+    };
+    Cache.prototype._fetch_page = function (handle) {
+        return this._cache[types_1.SHOPIFY_TYPE_PAGE][handle];
+    };
+    Cache.prototype._fetch_collection = function (handle) {
+        return this._cache[types_1.SHOPIFY_TYPE_COLLECTION][handle];
+    };
+    /**
+     * Add a new item to the object cache, accepts an item type,
+     * the handle of the item, and the item's content as an object.
+     *
+     * @param {ShopifyTypeStr}  type    The Shopify type to add
+     * @param {string}          handle  The handle of the item we're searching for
+     * @param {ShopifyType}     value   The contents of the Shopify item
+     *
+     * @return {void}
+     */
+    Cache.prototype.set = function (type, handle, value) {
+        // Replace the value in our cache with the given object, and
+        // also suffix our timestamp to the object.
+        this._cache[type][handle] = __assign({}, value, (_a = {}, _a[exports.OBJ_CACHE_TS_KEY] = lib_1.getCurrentEpoch(), _a));
+        var _a;
+    };
+    return Cache;
+}());
+exports.Cache = Cache;
+exports.default = Cache;
+var _a;
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * Return the current unix time (time since epoch)
+ *
+ * We only need data resolution to the second.
+ */
+function getCurrentEpoch() {
+    return +new Date();
+}
+exports.getCurrentEpoch = getCurrentEpoch;
+function pluralizeType(type) {
+    return type + "s";
+}
+exports.pluralizeType = pluralizeType;
+
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var cache_1 = __webpack_require__(1);
+function storage_clean_expired(data, opts) {
+    var cleaned = cache_1.OBJ_CACHE_DEFAULT_DATA;
+    Object.keys(data).forEach(function (typeKey) {
+        Object.keys(data[typeKey]).forEach(function (itemKey) {
+            var item = data[typeKey][itemKey];
+            var timestamp = item.__ts;
+            if ((Date.now() - timestamp) <= opts.cacheTimeout) {
+                cleaned[typeKey][itemKey] = item;
+            }
+            else {
+                console.warn('DEL', item);
+            }
+        });
+    });
+    return cleaned;
+}
+var StorageDriver = /** @class */ (function () {
+    function StorageDriver(opts) {
+        this.opts = opts || cache_1.OBJ_CACHE_DEFAULT_OPTS;
+    }
+    StorageDriver.prototype.read = function () {
+        return Promise.resolve(cache_1.OBJ_CACHE_DEFAULT_DATA);
+    };
+    StorageDriver.prototype.write = function (data) {
+        return Promise.resolve(true);
+    };
+    StorageDriver.DEFAULT_CACHE_KEY_NAME = 'shopify_js_cache';
+    return StorageDriver;
+}());
+exports.StorageDriver = StorageDriver;
+var ForageStorageDriver = /** @class */ (function (_super) {
+    __extends(ForageStorageDriver, _super);
+    function ForageStorageDriver() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    ForageStorageDriver.prototype.read = function () {
+        var _this = this;
+        var localForage = __webpack_require__(4);
+        var cacheKey = StorageDriver.DEFAULT_CACHE_KEY_NAME;
+        console.log('READ');
+        return localForage.getItem(cacheKey)
+            .then(function (data) { return storage_clean_expired(data, _this.opts); })
+            .catch(function (e) { return console.error(e); });
+    };
+    ForageStorageDriver.prototype.write = function (data) {
+        var localForage = __webpack_require__(4);
+        var cacheKey = StorageDriver.DEFAULT_CACHE_KEY_NAME;
+        console.log("WRITE", data);
+        return localForage.setItem(cacheKey, data)
+            .then(function (res) { return true; });
+    };
+    return ForageStorageDriver;
+}(StorageDriver));
+exports.ForageStorageDriver = ForageStorageDriver;
+
+
+/***/ }),
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {var require;var require;/*!
@@ -2495,10 +2746,31 @@ module.exports = localforage_js;
 
 },{"3":3}]},{},[4])(4)
 });
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(8)))
 
 /***/ }),
-/* 1 */
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var client_1 = __webpack_require__(6);
+var cache_1 = __webpack_require__(1);
+var Storage = __webpack_require__(3);
+var Types = __webpack_require__(0);
+var Lib = __webpack_require__(2);
+exports.default = {
+    Client: client_1.default,
+    Cache: cache_1.default,
+    Storage: Storage,
+    Types: Types,
+    Lib: Lib
+};
+
+
+/***/ }),
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2512,12 +2784,12 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var unfetch_1 = __webpack_require__(2);
-var cache_1 = __webpack_require__(3);
-var lib_1 = __webpack_require__(7);
-var types_1 = __webpack_require__(6);
-var types_2 = __webpack_require__(6);
-var storage_1 = __webpack_require__(4);
+var unfetch_1 = __webpack_require__(7);
+var cache_1 = __webpack_require__(1);
+var lib_1 = __webpack_require__(2);
+var types_1 = __webpack_require__(0);
+var types_2 = __webpack_require__(0);
+var storage_1 = __webpack_require__(3);
 /**
  * TODO: Improve error handling, this is just a placeholder
  *
@@ -2789,7 +3061,7 @@ exports.default = Client;
 
 
 /***/ }),
-/* 2 */
+/* 7 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -2852,209 +3124,7 @@ var index = typeof fetch=='function' ? fetch.bind() : function(url, options) {
 
 
 /***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-var __assign = (this && this.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-var lib_1 = __webpack_require__(7);
-var types_1 = __webpack_require__(6);
-/**
- * This will be the key that will be suffixed to every
- * complete Shopify cache entry that is saved in the cache.
- *
- * The current UNIX (epoch) timestamp is stored to allow
- * for cached items to expire after a short period of time,
- * ensuring accuracy.
- */
-exports.OBJ_CACHE_TS_KEY = '__ts';
-exports.OBJ_CACHE_DEFAULT_CACHE_EXPIRY = 300; // 5 minutes
-exports.OBJ_CACHE_DEFAULT_DATA = (_a = {},
-    _a[types_1.SHOPIFY_TYPE_PRODUCT] = {},
-    _a[types_1.SHOPIFY_TYPE_PAGE] = {},
-    _a[types_1.SHOPIFY_TYPE_COLLECTION] = {},
-    _a);
-exports.OBJ_CACHE_DEFAULT_OPTS = {
-    cacheTimeout: exports.OBJ_CACHE_DEFAULT_CACHE_EXPIRY,
-};
-var Cache = /** @class */ (function () {
-    function Cache(options, cache) {
-        var defaultOpts = exports.OBJ_CACHE_DEFAULT_OPTS;
-        this.options = __assign({}, defaultOpts, options);
-        this._cache = cache || exports.OBJ_CACHE_DEFAULT_DATA;
-    }
-    /**
-     * Returns a copied instance of the current internal
-     * raw cache object. This function is primarily intended
-     * to be used by the given `StorageInterface` class.
-     *
-     * @return {CacheData}    A copy of the current cache
-     */
-    Cache.prototype.readCache = function () { return __assign({}, this._cache); };
-    /**
-     * Replaces the current cache data instance with a provided
-     * one. This function is primarily intended to be used for
-     * loading existing cache objects (pre-warmed).
-     *
-     * @param {CacheData} cache   The object cache to apply
-     * @return {void}
-     */
-    Cache.prototype.writeCache = function (cache) { this._cache = __assign({}, cache); };
-    Cache.prototype._try_remove_expired_entry = function (type, handle) {
-        var now = lib_1.getCurrentEpoch();
-        var entry = this._cache[type][handle];
-        // There is no entry, thus it is not valid / is invalidated
-        if (!entry)
-            return true;
-        if ((now - entry['__ts']) / 1000 > this.options.cacheTimeout) {
-            // Delete the entry
-            delete this._cache[type][handle];
-            return true;
-        }
-        // The cached entry is still valid
-        return false;
-    };
-    /**
-     * Search the Shopify cache for a specific item.
-     *
-     * @param {ShopifyTypeStr}  type    The Shopify type to find
-     * @param {string}          handle  The handle of the item we're searching for
-     *
-     * @return {ShopifyType | null}     Returns the result of the lookup (if it's in the cache)
-     */
-    Cache.prototype.fetch = function (type, handle) {
-        /**
-         * Looks up an item to see if it has expired in our cache.
-         * In the case it has, we delete the data from the cache
-         * before we attempt to access it.
-         */
-        this._try_remove_expired_entry(type, handle);
-        var resolveFn = (_a = {},
-            _a[types_1.SHOPIFY_TYPE_PRODUCT] = '_fetch_product',
-            _a[types_1.SHOPIFY_TYPE_COLLECTION] = '_fetch_collection',
-            _a[types_1.SHOPIFY_TYPE_PAGE] = '_fetch_page',
-            _a.default = function () { return (null); },
-            _a)[type];
-        return this[resolveFn](handle);
-        var _a;
-    };
-    Cache.prototype._fetch_product = function (handle) {
-        return this._cache[types_1.SHOPIFY_TYPE_PRODUCT][handle];
-    };
-    Cache.prototype._fetch_page = function (handle) {
-        return this._cache[types_1.SHOPIFY_TYPE_PAGE][handle];
-    };
-    Cache.prototype._fetch_collection = function (handle) {
-        return this._cache[types_1.SHOPIFY_TYPE_COLLECTION][handle];
-    };
-    /**
-     * Add a new item to the object cache, accepts an item type,
-     * the handle of the item, and the item's content as an object.
-     *
-     * @param {ShopifyTypeStr}  type    The Shopify type to add
-     * @param {string}          handle  The handle of the item we're searching for
-     * @param {ShopifyType}     value   The contents of the Shopify item
-     *
-     * @return {void}
-     */
-    Cache.prototype.set = function (type, handle, value) {
-        // Replace the value in our cache with the given object, and
-        // also suffix our timestamp to the object.
-        this._cache[type][handle] = __assign({}, value, (_a = {}, _a[exports.OBJ_CACHE_TS_KEY] = lib_1.getCurrentEpoch(), _a));
-        var _a;
-    };
-    return Cache;
-}());
-exports.Cache = Cache;
-exports.default = Cache;
-var _a;
-
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var cache_1 = __webpack_require__(3);
-function storage_clean_expired(data, opts) {
-    var cleaned = cache_1.OBJ_CACHE_DEFAULT_DATA;
-    Object.keys(data).forEach(function (typeKey) {
-        Object.keys(data[typeKey]).forEach(function (itemKey) {
-            var item = data[typeKey][itemKey];
-            var timestamp = item.__ts;
-            if ((Date.now() - timestamp) <= opts.cacheTimeout) {
-                cleaned[typeKey][itemKey] = item;
-            }
-            else {
-                console.warn('DEL', item);
-            }
-        });
-    });
-    return cleaned;
-}
-var StorageDriver = /** @class */ (function () {
-    function StorageDriver(opts) {
-        this.opts = opts || cache_1.OBJ_CACHE_DEFAULT_OPTS;
-    }
-    StorageDriver.prototype.read = function () {
-        return Promise.resolve(cache_1.OBJ_CACHE_DEFAULT_DATA);
-    };
-    StorageDriver.prototype.write = function (data) {
-        return Promise.resolve(true);
-    };
-    StorageDriver.DEFAULT_CACHE_KEY_NAME = 'shopify_js_cache';
-    return StorageDriver;
-}());
-exports.StorageDriver = StorageDriver;
-var ForageStorageDriver = /** @class */ (function (_super) {
-    __extends(ForageStorageDriver, _super);
-    function ForageStorageDriver() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    ForageStorageDriver.prototype.read = function () {
-        var _this = this;
-        var localForage = __webpack_require__(0);
-        var cacheKey = StorageDriver.DEFAULT_CACHE_KEY_NAME;
-        console.log('READ');
-        return localForage.getItem(cacheKey)
-            .then(function (data) { return storage_clean_expired(data, _this.opts); })
-            .catch(function (e) { return console.error(e); });
-    };
-    ForageStorageDriver.prototype.write = function (data) {
-        var localForage = __webpack_require__(0);
-        var cacheKey = StorageDriver.DEFAULT_CACHE_KEY_NAME;
-        console.log("WRITE", data);
-        return localForage.setItem(cacheKey, data)
-            .then(function (res) { return true; });
-    };
-    return ForageStorageDriver;
-}(StorageDriver));
-exports.ForageStorageDriver = ForageStorageDriver;
-
-
-/***/ }),
-/* 5 */
+/* 8 */
 /***/ (function(module, exports) {
 
 var g;
@@ -3080,67 +3150,7 @@ try {
 module.exports = g;
 
 
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SHOPIFY_TYPE_PRODUCT = 'product';
-exports.SHOPIFY_TYPE_COLLECTION = 'collection';
-exports.SHOPIFY_TYPE_PAGE = 'page';
-exports.VALID_SHOPIFY_TYPES = [
-    exports.SHOPIFY_TYPE_PRODUCT,
-    exports.SHOPIFY_TYPE_PAGE,
-    exports.SHOPIFY_TYPE_COLLECTION,
-];
-
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * Return the current unix time (time since epoch)
- *
- * We only need data resolution to the second.
- */
-function getCurrentEpoch() {
-    return +new Date();
-}
-exports.getCurrentEpoch = getCurrentEpoch;
-function pluralizeType(type) {
-    return type + "s";
-}
-exports.pluralizeType = pluralizeType;
-
-
-/***/ }),
-/* 8 */,
-/* 9 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var client_1 = __webpack_require__(1);
-var cache_1 = __webpack_require__(3);
-var Storage = __webpack_require__(4);
-var Types = __webpack_require__(6);
-var Lib = __webpack_require__(7);
-exports.default = {
-    Client: client_1.default,
-    Cache: cache_1.default,
-    Storage: Storage,
-    Types: Types,
-    Lib: Lib
-};
-
-
 /***/ })
 /******/ ]);
+});
 //# sourceMappingURL=node.js.map
