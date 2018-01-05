@@ -1,21 +1,31 @@
 {
   "name": "shopify-js",
   "version": "0.0.1",
-  "browser": "dist/browser.js",
-  "main": "dist/npm.js",
+  "browser": "dist/shopify-js.browser.js",
+  "main": "dist/shopify-js.umd.js",
   "dependencies": {
-    "localforage": "^1.5.5",
-    "typescript": "^2.6.2"
+    "localforage": "^1.5.5"
   },
   "devDependencies": {
     "@types/core-js": "^0.9.44",
+    "@types/node": "^8.5.7",
     "awesome-typescript-loader": "^3.4.1",
+    "gts": "^0.5.3",
     "source-map-loader": "^0.2.3",
+    "tslint": "^5.8.0",
+    "tslint-eslint-rules": "^4.1.1",
+    "typescript": "~2.6.1",
     "unfetch": "^3.0.0",
     "webpack": "^3.10.0"
   },
   "scripts": {
-    "build": "NODE_ENV=production webpack",
-    "watch": "webpack --progress --watch"
+    "compile": "NODE_ENV=production webpack",
+    "watch": "webpack --progress --watch",
+    "check": "gts check",
+    "clean": "gts clean",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run check"
   }
 }

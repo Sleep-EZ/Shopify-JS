@@ -1,4 +1,4 @@
-import { ShopifyTypeStr } from "./types";
+import {ShopifyTypeStr} from './types';
 
 /**
  * Return the current unix time (time since epoch)
@@ -6,9 +6,9 @@ import { ShopifyTypeStr } from "./types";
  * We only need data resolution to the second.
  */
 export function getCurrentEpoch(): number {
-    return + new Date();
+  return +new Date();
 }
 
 export function pluralizeType(type: ShopifyTypeStr) {
-    return `${type}s`;
+  return `${type}s`;
 }

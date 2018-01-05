@@ -18,14 +18,6 @@ const defaultConfig = {
     },
 
     module: {
-        loaders: [
-            {
-                test: /localforage\/dist\/localforage\.js/,
-                loader: 'exports?localforage',
-                options: { useCache: true }
-            }
-        ],
-
         rules: [
             { test: /\.tsx?$/, loader: 'awesome-typescript-loader' },
             { enforce: "pre", test: /\.jsx?$/, loader: 'source-map-loader' },
@@ -40,22 +32,22 @@ const defaultConfig = {
 
 module.exports = [
     Object.assign({}, defaultConfig, {
-        entry: './src/entry/browser.ts',
+        entry: './src/index.js',
 
         output: {
-            filename: 'browser.js',
-            library: 'shopify-js',
-            libraryTarget: 'umd',
+            filename: 'shopify-js.browser.js',
+            library: 'ShopifyJS',
+            libraryTarget: 'window',
             path: path.resolve(__dirname, 'dist'),
         },
     }),
 
     Object.assign({}, defaultConfig, {
-        entry: './src/entry/node.ts',
+        entry: './src/index.js',
 
         output: {
-            filename: 'node.js',
-            library: 'shopify-js',
+            filename: 'shopify-js.umd.js',
+            library: 'ShopifyJS',
             libraryTarget: 'umd',
             path: path.resolve(__dirname, 'dist'),
         },
