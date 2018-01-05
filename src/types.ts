@@ -2,6 +2,12 @@ export const SHOPIFY_TYPE_PRODUCT = 'product';
 export const SHOPIFY_TYPE_COLLECTION = 'collection';
 export const SHOPIFY_TYPE_PAGE = 'page';
 
+export const VALID_SHOPIFY_TYPES = [
+    SHOPIFY_TYPE_PRODUCT,
+    SHOPIFY_TYPE_PAGE,
+    SHOPIFY_TYPE_COLLECTION,
+];
+
 export type ShopifyTypeStr = (
     typeof SHOPIFY_TYPE_PRODUCT |
     typeof SHOPIFY_TYPE_COLLECTION |

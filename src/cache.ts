@@ -1,4 +1,3 @@
-import * as Types from './types';
 import {getCurrentEpoch} from './lib';
 import {
     Product, Collection, Page, 
@@ -18,23 +17,44 @@ import {
  */
 export const OBJ_CACHE_TS_KEY = '__ts';
 export const OBJ_CACHE_DEFAULT_CACHE_EXPIRY = 300; // 5 minutes
+export const OBJ_CACHE_DEFAULT_DATA = {
+    [SHOPIFY_TYPE_PRODUCT]: {},
+    [SHOPIFY_TYPE_PAGE]: {},
+    [SHOPIFY_TYPE_COLLECTION]: {},
+};
+export const OBJ_CACHE_DEFAULT_OPTS = {
+    cacheTimeout: OBJ_CACHE_DEFAULT_CACHE_EXPIRY,
+};
 
-export class ObjectCache {
-    options: ObjectCacheOptions;
-    _cache: ObjectCacheData;
+export class Cache {
+    options: CacheOptions;
+    _cache: CacheData;
 
-    constructor(options: ObjectCacheOptions, cache?: ObjectCacheData | undefined) {
-        this.options = {
-            cacheTimeout: OBJ_CACHE_DEFAULT_CACHE_EXPIRY,
-            ...options,
-        }
+    constructor(options: CacheOptions, cache?: CacheData | undefined) {
+        const defaultOpts = OBJ_CACHE_DEFAULT_OPTS;
 
-        this._cache = cache || {
-            [SHOPIFY_TYPE_PRODUCT]: {},
-            [SHOPIFY_TYPE_PAGE]: {},
-            [SHOPIFY_TYPE_COLLECTION]: {},
-        };
+        this.options = { ...defaultOpts, ...options };
+        this._cache = cache || OBJ_CACHE_DEFAULT_DATA;
     }
+
+    /**
+     * Returns a copied instance of the current internal
+     * raw cache object. This function is primarily intended
+     * to be used by the given `StorageInterface` class.
+     * 
+     * @return {CacheData}    A copy of the current cache
+     */
+    readCache(): CacheData { return {...this._cache}; }
+
+    /**
+     * Replaces the current cache data instance with a provided
+     * one. This function is primarily intended to be used for
+     * loading existing cache objects (pre-warmed).
+     * 
+     * @param {CacheData} cache   The object cache to apply
+     * @return {void}
+     */
+    writeCache(cache: CacheData): void { this._cache = {...cache}; }
 
     _try_remove_expired_entry(type: ShopifyTypeStr, handle: string) {
         const now = getCurrentEpoch();
@@ -46,8 +66,6 @@ export class ObjectCache {
         if((now - entry['__ts'])/1000 > this.options.cacheTimeout) {
             // Delete the entry
             delete this._cache[type][handle];
-
-            console.error([now - entry['__ts']]);
 
             return true;
         }
@@ -104,7 +122,7 @@ export class ObjectCache {
      * 
      * @return {void}
      */
-    set(type: Types.ShopifyTypeStr, handle: string, value: ShopifyType<string>): void {
+    set(type: ShopifyTypeStr, handle: string, value: ShopifyType<string>): void {
         // Replace the value in our cache with the given object, and
         // also suffix our timestamp to the object.
         this._cache[type][handle] = {
@@ -114,14 +132,14 @@ export class ObjectCache {
     }
 }
 
-export type ObjectCacheData = {
+export type CacheData = {
     "product": { [handle: string]: Product<string> },
     "collection": { [handle: string]: Collection<string> },
     "page": { [handle: string]: Page<string> },
 };
 
-export type ObjectCacheOptions = {
+export type CacheOptions = {
     cacheTimeout?: number,
 }
 
-export default ObjectCache;
+export default Cache;
