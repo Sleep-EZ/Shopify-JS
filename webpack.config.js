@@ -24,7 +24,12 @@ const defaultConfig = {
         ],
     },
 
+    externals: {
+        localforage: "localforage",
+    },
+
     plugins: [
+        new webpack.optimize.UglifyJsPlugin(),
         new CheckerPlugin(),
     ],
 }
