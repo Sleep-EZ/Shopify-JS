@@ -1,5 +1,6 @@
 import {getCurrentEpoch} from './lib';
-import {Collection, Page, Product, SHOPIFY_TYPE_COLLECTION, SHOPIFY_TYPE_PAGE, SHOPIFY_TYPE_PRODUCT, ShopifyType, ShopifyTypeStr} from './types';
+import {SHOPIFY_TYPE_COLLECTION, SHOPIFY_TYPE_PAGE, SHOPIFY_TYPE_PRODUCT} from './types';
+import {Page, Product, Collection, ShopifyType, ShopifyTypeStr} from './types';
 
 /**
  * This will be the key that will be suffixed to every
