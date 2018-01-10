@@ -29,7 +29,12 @@ const defaultConfig = {
     },
 
     plugins: [
-        new webpack.optimize.UglifyJsPlugin(),
+        new webpack.optimize.UglifyJsPlugin({
+            sourceMap: true,
+            mangle: {
+                reserved: ['fetch']
+            }
+        }),
         new CheckerPlugin(),
     ],
 }

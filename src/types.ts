@@ -1,49 +1,70 @@
+import { watch } from "fs";
+
 export const SHOPIFY_TYPE_PRODUCT = 'product';
 export const SHOPIFY_TYPE_COLLECTION = 'collection';
 export const SHOPIFY_TYPE_PAGE = 'page';
+export const SHOPIFY_TYPE_VARIANT = 'variant';
 
+// For JS use in validating Shopify types
 export const VALID_SHOPIFY_TYPES = [
   SHOPIFY_TYPE_PRODUCT,
   SHOPIFY_TYPE_PAGE,
   SHOPIFY_TYPE_COLLECTION,
 ];
 
-export type ShopifyTypeStr =
-    string&(typeof SHOPIFY_TYPE_PRODUCT|typeof SHOPIFY_TYPE_COLLECTION|
-            typeof SHOPIFY_TYPE_PAGE);
-
-export type ShopifyType<H extends string> = (Product<H>|Collection<H>|Page<H>);
-
-export type Expires = {
-  __ts: number
-};
 
 /**
- * Type definitions for the core Shopify JSON representations.
- *
- * These definitions are based on Shopify's web JSON API,
- * and certainly has the possibility for change (without notice).
+ * A type for representing any one of the three available
+ * Shopify types.
  */
-export type Product<H> = Expires&{
-  id: number,
+export type ShopifyType<H extends string> = Indexable&(Product<H>|
+  Collection<H>|Page<H>|Variant<H>);
+
+/**
+ * A type for each Shopify type in it's string form
+ */
+export type ShopifyTypeStr = (
+  typeof SHOPIFY_TYPE_PRODUCT| typeof SHOPIFY_TYPE_COLLECTION| typeof SHOPIFY_TYPE_PAGE);
+
+/**
+ * The type extended by the three primary types: **Page**,
+ * **Product**, and **Collection**. This secret value is
+ * suffixed to each object with the UNIX timestamp of when
+ * the value was written. This is used for cache expiration.
+ */
+export type Expires = { __ts: number };
+export type Indexable = { id: number };
+
+export type Handle = string;
+
+/**
+ * == Product
+ * 
+ * This is the TypeScript definition as described by Shopify's 
+ * JSON API. (WARNING: These are subject to change at Shopify's
+ * descretion without warning!)
+ */
+export type Product<H extends Handle> = Indexable&Expires&{
   handle: H,
   body_html: string | null,
   vendor: string | null,
   product_type: string | null,
-  created_at: Date,
-  updated_at: Date,
-  published_at: Date,
   template_suffix: string,
   published_scope: string,
   tags: string[],
-  variants: Variant[],
+  variants: Variant<H>[],
   options: Option[],
   images: Image[],
   image: Image,
+  created_at: Date,
+  updated_at: Date,
+  published_at: Date,
 };
 
-export type Image = {
-  id: number,
+/**
+ * A Shopify image object, typically found in the Product response.
+ */
+export type Image = Indexable&{
   product_id: number,
   position: number,
   created_at: Date,
@@ -54,16 +75,20 @@ export type Image = {
   variant_ids: number[],
 };
 
-export type Option = {
-  id: number,
+/**
+ * A product option
+ */
+export type Option = Indexable&{
   product_id: number,
   name: string,
   position: number,
   values: string[],
 };
 
-export type Variant = {
-  id: number,
+/**
+ * A product variant
+ */
+export type Variant<H extends Handle> = Indexable&Expires&{
   product_id: number,
   title: string,
   price: number,
@@ -90,19 +115,26 @@ export type Variant = {
   requires_shipping: boolean,
 };
 
-export type Page<H> = Expires&{
-  id: number,
+/**
+ * A Shopify page element
+ */
+export type Page<H> = Indexable&Expires&{
   title: string,
   handle: H,
-
   body_html: string,
   created_at: Date,
   published_at: Date,
   updated_at: Date,
 };
 
-export type Collection<H> = Expires&{
-  id: number,
+/**
+ * A Shopify collection.
+ * 
+ * This type is special because it requires two requests
+ * to fully resolve this. The original collection data,
+ * and it's products (`collection.products`).
+ */
+export type Collection<H> = Indexable&Expires&{
   title: string,
   handle: H,
   description: string,

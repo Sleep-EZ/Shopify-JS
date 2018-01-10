@@ -1,8 +1,8 @@
-const fetch = require('unfetch');
+const fetch = require('unfetch').default;
 
-import {Cache, OBJ_CACHE_DEFAULT_CACHE_EXPIRY} from './cache';
+import Cache, {CACHE_DEFAULT_CACHE_EXPIRY, CacheData, CacheData$Values} from './cache';
 import {pluralizeType} from './lib';
-import {Product, Page, Collection, ShopifyType, ShopifyTypeStr, VALID_SHOPIFY_TYPES} from './types';
+import {Product, Page, Collection, ShopifyType, ShopifyTypeStr, VALID_SHOPIFY_TYPES, Handle} from './types';
 import {SHOPIFY_TYPE_PRODUCT, SHOPIFY_TYPE_COLLECTION, SHOPIFY_TYPE_PAGE} from './types';
 import {StorageDriver} from './storage';
 
@@ -34,7 +34,7 @@ function defaultErrorHandler(err: Error) {
  * This type allows us to describe the type (Generic T)
  * contained inside each of the possible keys.
  */
-type ShopifyInstanceWrapper<H> = {
+type ShopifyInstanceWrapper<H extends Handle> = {
   product: Product<H>,
   products: Array<Product<string>>,
   page: Page<H>,
@@ -46,7 +46,7 @@ type ShopifyInstanceWrapper<H> = {
  * This type describes the configurable options available
  * in the Shopify `Client`.
  */
-type ClientOptions = {
+export type ClientOptions = {
   // The domain name of the Shopify store (something.myshopify.com)
   domain: string,
 
@@ -67,7 +67,7 @@ type ClientOptions = {
  * and interacting with Shopify's JSON API. By providing a simple
  * cache you can easily access most Shopify objects easily in JS.
  */
-export class Client {
+export default class Client {
   // The URL to prefix to each request (includes the https://)
   urlPrefix: string;
 
@@ -91,19 +91,20 @@ export class Client {
    *                                  Shopify-JS client.
    */
   constructor(options: ClientOptions) {
-    // Unpack the given configuration options (if any)
-    const {domain, cacheTimeout = OBJ_CACHE_DEFAULT_CACHE_EXPIRY} = options;
-
-    const cacheOptions = {cacheTimeout};
-    const {storage = new StorageDriver(cacheOptions)} = options;
-    const {cache = new Cache(cacheOptions)} = options;
-
     // Ensure that a domain name is given and (mostly) valid
-    if (!domain || !domain.length || !/[\w\d\-\.]+/.test(domain)) {
+    if (!options || Object.keys(options).indexOf('domain') === -1 || 
+        !options.domain.length || !/[\w\d\-\.]+/.test(options.domain)) {
+
       throw new Error(
           `You must provide the Shopify store's domain name\n` +
           `\texample: "my-store.myshopify.com"`);
     }
+
+    // Unpack the given configuration options (if any)
+    const {domain, cacheTimeout = CACHE_DEFAULT_CACHE_EXPIRY} = options;
+    const cacheOptions = {cacheTimeout};
+    const {storage = new StorageDriver(cacheOptions)} = options;
+    const {cache = new Cache(cacheOptions)} = options;
 
     // If a pre-warmed cache was given, always use it
     this.cache = cache;
@@ -115,12 +116,13 @@ export class Client {
     this.storage = storage || new StorageDriver();
   }
 
-  read(): Promise<boolean> {
+  read(): Promise<CacheData$Values|null> {
     return this.storage.read().then(cacheData => {
-      if (!cacheData) return false;
+      if (!cacheData) return null;
 
+      this.cache
       this.cache._cache = cacheData;
-      return true;
+      return cacheData;
     });
   }
 
@@ -367,6 +369,13 @@ export class Client {
         products,
       };
 
+      // We should also cache all of the products we just
+      // grabbed! A great opportunity.
+      products.forEach(product => {
+        client.cache.set(SHOPIFY_TYPE_PRODUCT, product.handle, product);
+      })
+
+      // Write the merged collection item
       client.cache.set(type, handle, finalResult);
       client.storage.write(client.cache._cache);
 

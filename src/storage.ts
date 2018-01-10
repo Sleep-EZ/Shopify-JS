@@ -1,73 +1,58 @@
 import * as localForage from 'localforage';
 
-import {Cache, CacheData, CacheDataGroup, CacheOptions, OBJ_CACHE_DEFAULT_CACHE_EXPIRY, OBJ_CACHE_DEFAULT_DATA, OBJ_CACHE_DEFAULT_OPTS, OBJ_CACHE_TS_KEY} from './cache';
-import {Collection, Expires, Page, Product, ShopifyType, ShopifyTypeStr, VALID_SHOPIFY_TYPES} from './types';
+import Cache, {CacheData, CacheDataGroup, CacheOptions, CacheData$Values} from './cache';
+import {CACHE_DEFAULT_CACHE_EXPIRY, CACHE_DEFAULT_DATA, 
+        CACHE_DEFAULT_OPTS, CACHE_TS_KEY } from './cache';
+import {Collection, Expires, Page, Product, 
+        ShopifyType, ShopifyTypeStr, VALID_SHOPIFY_TYPES} from './types';
+import { isExpired } from './lib';
 
-function storage_clean_expired(
-    data: CacheData|void, opts: CacheOptions): CacheData {
-  const cleaned = OBJ_CACHE_DEFAULT_DATA;
-  if (!data) return cleaned;
+function clean_expired(data: CacheData$Values, opts: CacheOptions): CacheData$Values {
+  let cleaned: CacheData$Values = [];
 
-  function clean_group<T extends ShopifyType<string>>(
-      items: CacheDataGroup<T>, opts: CacheOptions): CacheDataGroup<T> {
-    const cleaned: CacheDataGroup<T> = {};
-
-    Object.keys(items).forEach((handle: string) => {
-      const item: T = items[handle];
-      if (!item) return;
-
-      const ts = item.__ts;
-      const timeout = opts.cacheTimeout;
-
-      if ((Date.now() - ts) / 1000 <= timeout) {
-        cleaned[handle] = item;
-      }
-    });
-
-    return cleaned;
-  }
-
-  return Object.assign({}, data, {
-    product: clean_group<Product<string>>(data.product, opts),
-    collection: clean_group<Collection<string>>(data.collection, opts),
-    page: clean_group<Page<string>>(data.page, opts),
+  data.forEach(item => {
+    if(!isExpired(item.__ts, opts.cacheTimeout)) {
+      cleaned.push(item);
+    }
   });
+
+  return cleaned;
 }
+
 
 export class StorageDriver {
   static DEFAULT_CACHE_KEY_NAME = 'shopify_js_cache';
   opts: CacheOptions;
 
   constructor(opts?: CacheOptions) {
-    this.opts = opts || OBJ_CACHE_DEFAULT_OPTS;
+    this.opts = opts || CACHE_DEFAULT_OPTS;
   }
 
-  read(): Promise<CacheData|void> {
-    return Promise.resolve(OBJ_CACHE_DEFAULT_DATA);
+  read(): Promise<CacheData$Values|void> {
+    return Promise.resolve(CACHE_DEFAULT_DATA.values);
   }
 
-  write(data: CacheData): Promise<boolean> {
+  write(data: CacheData$Values): Promise<boolean> {
     return Promise.resolve(true);
   }
 }
 
 export class ForageStorageDriver extends StorageDriver {
-  read(): Promise<CacheData|void> {
+  read(): Promise<CacheData$Values|void> {
     const cacheKey = StorageDriver.DEFAULT_CACHE_KEY_NAME;
 
     console.log('READ');
 
-    return localForage.getItem<CacheData|null>(cacheKey)
-        .then(
-            (data) =>
-                ((data) ? storage_clean_expired(data, this.opts) : undefined))
-        .catch((e: Error) => console.error(e));
+    return localForage.getItem<CacheData$Values|null>(cacheKey)
+        .then((data) => ((data) 
+          ? clean_expired(data, this.opts) 
+          : undefined))
+        .catch((e: Error) => 
+          console.error(e));
   }
 
-  write(data: CacheData): Promise<boolean> {
+  write(data: CacheData$Values): Promise<boolean> {
     const cacheKey = StorageDriver.DEFAULT_CACHE_KEY_NAME;
-
-    console.log('WRITE', data);
 
     return localForage.setItem(cacheKey, data).then((res: {}) => true);
   }
