@@ -1,30 +1,25 @@
-import { watch } from "fs";
 
-export const SHOPIFY_TYPE_PRODUCT = 'product';
-export const SHOPIFY_TYPE_COLLECTION = 'collection';
-export const SHOPIFY_TYPE_PAGE = 'page';
-export const SHOPIFY_TYPE_VARIANT = 'variant';
+/**
+ * A type for each Shopify type in it's string form
+ */
+export enum ShopifyTypeEnum {
+  Product = 'product',
+  Collection = 'collection',
+  Page = 'page',
+  Variant = 'variant',
+}
 
-// For JS use in validating Shopify types
-export const VALID_SHOPIFY_TYPES = [
-  SHOPIFY_TYPE_PRODUCT,
-  SHOPIFY_TYPE_PAGE,
-  SHOPIFY_TYPE_COLLECTION,
-];
-
+export const SHOPIFY_TYPE_PRODUCT = ShopifyTypeEnum.Product;
+export const SHOPIFY_TYPE_COLLECTION = ShopifyTypeEnum.Collection;
+export const SHOPIFY_TYPE_PAGE = ShopifyTypeEnum.Page;
+export const SHOPIFY_TYPE_VARIANT = ShopifyTypeEnum.Variant;
 
 /**
  * A type for representing any one of the three available
  * Shopify types.
  */
-export type ShopifyType<H extends string> = Indexable&(Product<H>|
-  Collection<H>|Page<H>|Variant<H>);
-
-/**
- * A type for each Shopify type in it's string form
- */
-export type ShopifyTypeStr = (
-  typeof SHOPIFY_TYPE_PRODUCT| typeof SHOPIFY_TYPE_COLLECTION| typeof SHOPIFY_TYPE_PAGE);
+export type GenericShopifyType =
+    Indexable&(Product<Handle>|Collection<Handle>|Page<Handle>|Variant);
 
 /**
  * The type extended by the three primary types: **Page**,
@@ -32,19 +27,25 @@ export type ShopifyTypeStr = (
  * suffixed to each object with the UNIX timestamp of when
  * the value was written. This is used for cache expiration.
  */
-export type Expires = { __ts: number };
-export type Indexable = { id: number };
+export type Expires = {
+  __expires: number,
+  __type: ShopifyTypeEnum,
+};
+export type Indexable = {
+  id: number
+};
 
 export type Handle = string;
 
 /**
  * == Product
- * 
- * This is the TypeScript definition as described by Shopify's 
+ *
+ * This is the TypeScript definition as described by Shopify's
  * JSON API. (WARNING: These are subject to change at Shopify's
  * descretion without warning!)
  */
 export type Product<H extends Handle> = Indexable&Expires&{
+  title: string,
   handle: H,
   body_html: string | null,
   vendor: string | null,
@@ -52,10 +53,10 @@ export type Product<H extends Handle> = Indexable&Expires&{
   template_suffix: string,
   published_scope: string,
   tags: string[],
-  variants: Variant<H>[],
+  variants: Variant[],
   options: Option[],
   images: Image[],
-  image: Image,
+  image: Image|null,
   created_at: Date,
   updated_at: Date,
   published_at: Date,
@@ -88,7 +89,7 @@ export type Option = Indexable&{
 /**
  * A product variant
  */
-export type Variant<H extends Handle> = Indexable&Expires&{
+export type Variant = Indexable&Expires&{
   product_id: number,
   title: string,
   price: number,
@@ -97,16 +98,16 @@ export type Variant<H extends Handle> = Indexable&Expires&{
   inventory_policy: string,
   compare_at_price: number,
   fulfillment_service: string,
-  inventory_management: string|null,
+  inventory_management: string | null,
   option1: string,
-  option2: string|null,
-  option3: string|null,
+  option2: string | null,
+  option3: string | null,
   created_at: Date,
   updated_at: Date,
   taxable: boolean,
-  barcode: string|null,
+  barcode: string | null,
   grams: number,
-  image_id: number,
+  image_id: number|null,
   inventory_quantity: number,
   weight: number,
   weight_unit: string,
@@ -129,7 +130,7 @@ export type Page<H> = Indexable&Expires&{
 
 /**
  * A Shopify collection.
- * 
+ *
  * This type is special because it requires two requests
  * to fully resolve this. The original collection data,
  * and it's products (`collection.products`).

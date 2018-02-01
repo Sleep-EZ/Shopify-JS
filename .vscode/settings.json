@@ -1,3 +1,5 @@
 {
-    "editor.minimap.enabled": false
+    "editor.minimap.enabled": false,
+    "codemetrics.basics.EnabledForTS": false,
+    "typescript.tsdk": "node_modules\\typescript\\lib"
 }

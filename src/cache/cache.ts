@@ -1,0 +1,178 @@
+import {isExpired, getCurrentEpoch} from '../lib';
+import {Collection, GenericShopifyType, Handle, Page, Product, ShopifyTypeEnum} from '../types';
+import {CacheData, CacheData$Values, indexSingleElement, rebuildCache} from './data';
+import { generateEmptyCacheData } from './index';
+
+/**
+ * This will be the key that will be suffixed to every
+ * complete Shopify cache entry that is saved in the cache.
+ *
+ * The current UNIX (epoch) timestamp is stored to allow
+ * for cached items to expire after a short period of time,
+ * ensuring accuracy.
+ */
+export const CACHE_TS_KEY = '__expires';
+
+/**
+ * `OBJ_CACHE_DEFAULT_CACHE_EXPIRY` describes the time
+ * in seconds until a record in the cache will be declared
+ * out of date, and be removed during access-time.
+ */
+export const CACHE_DEFAULT_CACHE_EXPIRY = 300;  // 5 minutes
+
+
+/**
+ * Options for the Cache object
+ */
+export const CACHE_DEFAULT_OPTS: CacheOptions = {
+  cacheTimeout: CACHE_DEFAULT_CACHE_EXPIRY,
+};
+
+/**
+ * The cache object is the foundation of Shopify-JS. It is a simple
+ * object store, with items indexed by their Shopify handles (due to
+ * their uniqueness on the Shopify platform).
+ *
+ * Operations done inside the `Cache` object to it's data store is
+ * done directly on the data, and does **not** create and return a
+ * new Object for every transformation.
+ *
+ */
+export class Cache {
+  // The options for the Cache object
+  options: CacheOptions;
+
+  // The object data store
+  _cache: CacheData;
+
+  /**
+   * Creates a new Cache instance. Both parameters
+   * are optional and will fall back to defaults.
+   *
+   * @param {CacheOptions}        options?  Optional: Configurable options
+   *                                        for the Cache instance.
+   *
+   * @param {CacheData|undefined} cache?    A pre-existing cache object to use,
+   *                                        if provided it will be loaded
+   * immediately.
+   */
+  constructor(options?: CacheOptions, cache?: CacheData|undefined) {
+    const defaultOpts = CACHE_DEFAULT_OPTS;
+
+    this.options = {...defaultOpts, ...options};
+    this._cache = cache || generateEmptyCacheData();
+  }
+
+  /**
+   * Returns a copied instance of the current internal
+   * raw cache object. This function is primarily intended
+   * to be used by the given `StorageInterface` class.
+   *
+   * @return {CacheData$Values} A copy of the current cache
+   */
+  readCache(): CacheData$Values {
+    return [...this._cache.data];
+  }
+
+  /**
+   * Replaces the current cache data instance with a provided
+   * one. This function is primarily intended to be used for
+   * loading existing cache objects (pre-warmed).
+   *
+   * @param {CacheData$Values} cache   The object cache to apply
+   * @return {void}
+   */
+  writeCache(cache: CacheData$Values): void {
+    this._cache = rebuildCache(cache);
+  }
+
+  getProduct<H extends Handle>(handle: H): Product<H>|null {
+    return (
+        this._fetchHandle<H>(ShopifyTypeEnum.Product, handle) as Product<H>|
+        null);
+  }
+
+  getCollection<H extends Handle>(handle: H): Collection<H>|null {
+    return (
+        this._fetchHandle<H>(ShopifyTypeEnum.Collection, handle) as
+            Collection<H>|
+        null);
+  }
+
+  getPage<H extends Handle>(handle: H): Page<H>|null {
+    return (
+        this._fetchHandle<H>(ShopifyTypeEnum.Page, handle) as Page<H>| null);
+  }
+
+  _fetchHandle<H extends Handle>(type: ShopifyTypeEnum, handle: H):
+      GenericShopifyType|null {
+    if (!(handle in this._cache.handles[type])) return null;
+
+    const pos = this._cache.handles[type][handle];
+    this._delete_if_expired(pos);
+
+    return (this._cache.data[pos] as GenericShopifyType | null);
+  }
+
+  _fetchId(id: number): GenericShopifyType|null {
+    if (!(id in this._cache.ids)) return null;
+
+    const dataPos = this._cache.ids[id];
+    this._delete_if_expired(dataPos);
+
+    return (this._cache.data[dataPos] as GenericShopifyType | null);
+  }
+
+  /**
+   * Add a new item to the object cache, accepts an item type,
+   * the handle of the item, and the item's content as an object.
+   *
+   * @param {ShopifyTypeStr}  type    The Shopify type to add
+   * @param {string}          handle  The handle of the item we're searching for
+   * @param {GenericShopifyType}     value   The contents of the Shopify item
+   *
+   * @return {void}
+   */
+  set(type: ShopifyTypeEnum, value: GenericShopifyType, expires?: number): void {
+    // Let's modify the incoming value and give it an expiration time
+    const expiresAt = expires || (getCurrentEpoch() + (this.options.cacheTimeout * 1000));
+    value.__expires = expiresAt;
+    value.__type = type;
+
+    const itemWasCreated = indexSingleElement(this._cache, value);
+
+    // If there are no new additions, then this object already exists.
+    // Let's update it's value, and keep it's indexes.
+    if (!itemWasCreated) {
+      // Find the position of the value so we can update it
+      const pos = this._cache.ids[value.id];
+      this._cache.data[pos] = value;
+    }
+  }
+
+  /**
+   * This function will resolve the item at a given index position, and
+   * determine if the value exists (or has been deleted and is null). If the
+   * item exists, but has expired. It will set the record at that index to null.
+   *
+   * @param {number} position   The position of the object in the data cache
+   */
+  _delete_if_expired(position: number): boolean {
+    // The item does not exist
+    const item = this._cache.data[position];
+
+    // The item has already been deleted (expired)
+    if (item === null) return true;
+
+    // The cache item is valid, return immediately
+    if (!isExpired(item.__expires)) return true;
+
+    // The cache item has expired, remove it
+    this._cache.data[position] = null;
+    return true;
+  }
+}
+
+export type CacheOptions = {
+  cacheTimeout: number,
+};

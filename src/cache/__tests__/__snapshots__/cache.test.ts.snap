@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`readCache() works 1`] = `
+Array [
+  Object {
+    "__expires": 1900000000000,
+    "__type": "page",
+    "body_html": "",
+    "created_at": 2010-01-01T00:00:00.000Z,
+    "handle": "asdas",
+    "id": 100,
+    "published_at": 2010-01-01T00:00:00.000Z,
+    "title": "",
+    "updated_at": 2010-01-01T00:00:00.000Z,
+  },
+]
+`;

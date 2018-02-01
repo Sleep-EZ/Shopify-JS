@@ -2,3 +2,5 @@
 node_modules/
 **/*.map
 **/*.html
+build/
+coverage/

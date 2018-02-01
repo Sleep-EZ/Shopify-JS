@@ -1,8 +1,8 @@
 const fetch = require('unfetch').default;
 
-import Cache, {CACHE_DEFAULT_CACHE_EXPIRY, CacheData, CacheData$Values} from './cache';
+import {Cache, CACHE_DEFAULT_CACHE_EXPIRY, CacheData$Values, generateEmptyCacheData} from './cache';
 import {pluralizeType} from './lib';
-import {Product, Page, Collection, ShopifyType, ShopifyTypeStr, VALID_SHOPIFY_TYPES, Handle} from './types';
+import {Product, Page, Collection, GenericShopifyType, Handle, ShopifyTypeEnum} from './types';
 import {SHOPIFY_TYPE_PRODUCT, SHOPIFY_TYPE_COLLECTION, SHOPIFY_TYPE_PAGE} from './types';
 import {StorageDriver} from './storage';
 
@@ -34,7 +34,7 @@ function defaultErrorHandler(err: Error) {
  * This type allows us to describe the type (Generic T)
  * contained inside each of the possible keys.
  */
-type ShopifyInstanceWrapper<H extends Handle> = {
+export type ShopifyInstanceWrapper<H extends Handle> = {
   product: Product<H>,
   products: Array<Product<string>>,
   page: Page<H>,
@@ -67,7 +67,7 @@ export type ClientOptions = {
  * and interacting with Shopify's JSON API. By providing a simple
  * cache you can easily access most Shopify objects easily in JS.
  */
-export default class Client {
+export class Client {
   // The URL to prefix to each request (includes the https://)
   urlPrefix: string;
 
@@ -92,9 +92,8 @@ export default class Client {
    */
   constructor(options: ClientOptions) {
     // Ensure that a domain name is given and (mostly) valid
-    if (!options || Object.keys(options).indexOf('domain') === -1 || 
+    if (!options || Object.keys(options).indexOf('domain') === -1 ||
         !options.domain.length || !/[\w\d\-\.]+/.test(options.domain)) {
-
       throw new Error(
           `You must provide the Shopify store's domain name\n` +
           `\texample: "my-store.myshopify.com"`);
@@ -120,14 +119,19 @@ export default class Client {
     return this.storage.read().then(cacheData => {
       if (!cacheData) return null;
 
-      this.cache
-      this.cache._cache = cacheData;
-      return cacheData;
+      this.cache._cache = generateEmptyCacheData();
+      cacheData.forEach((cacheItem: GenericShopifyType|null) => {
+        if (!cacheItem) return;
+        this.cache.set(cacheItem.__type, cacheItem);
+      });
+
+      // Do *not* return by reference
+      return [...this.cache._cache.data];
     });
   }
 
   write(): Promise<boolean> {
-    return this.storage.write(this.cache._cache);
+    return this.storage.write(this.cache._cache.data);
   }
 
   /**
@@ -139,13 +143,13 @@ export default class Client {
    * Additional parameters can also be given, in the case for irregular
    * types with varying URL patterns (i.e., blogs and collections).
    *
-   * @param {ShopifyTypeStr}  type    The Shopify type to resolve
+   * @param {ShopifyTypeEnum} type    The Shopify type to resolve
    * @param {string}          handle  The item handle to target
    * @param {string[]}        extra   Additional parameters to include in the URL
    *
    * @return {string}         The resolved URL of the JSON Shopify object
    */
-  _resolve_path(type: ShopifyTypeStr, handle: string, ...extra: string[]) {
+  _resolve_path(type: ShopifyTypeEnum, handle: string, ...extra: string[]) {
     // Pluralize the Shopify type string (product => products)
     const pluralType = pluralizeType(type);
 
@@ -288,18 +292,35 @@ export default class Client {
    * The primary method for retrieving Shopify items from
    * either the JSON API or our local cache
    *
-   * @param   {ShopifyTypeStr}    type    The Shopify type to target (product, collection, page)
+   * @param   {ShopifyTypeEnum}   type    The Shopify type to target (product, collection, page)
    * @param   {string}            handle  The handle of the Shopify item to resolve
    */
-  get<T extends ShopifyType<string>>(type: ShopifyTypeStr, handle: string):
-      Promise<ShopifyType<string>> {
+  get<T extends GenericShopifyType>(type: ShopifyTypeEnum, handle: string):
+      Promise<GenericShopifyType> {
     // Check that the type is known
-    if (VALID_SHOPIFY_TYPES.indexOf(type) === -1) {
+    if (!Object.values(ShopifyTypeEnum).includes(type)) {
       throw new Error(`Refusing to get unknown Shopify type '${type}'`);
     }
 
     // Attempt to retrieve the item from the cache
-    const cacheResult = this.cache.fetch(type, handle);
+    let cacheResult;
+
+    switch (type) {
+      case ShopifyTypeEnum.Collection:
+        cacheResult = this.cache.getCollection(handle);
+        break;
+
+      case ShopifyTypeEnum.Page:
+        cacheResult = this.cache.getPage(handle);
+        break;
+
+      case ShopifyTypeEnum.Product:
+        cacheResult = this.cache.getProduct(handle);
+        break;
+
+      default:
+        cacheResult = null;
+    }
 
     // Return immediately if we hit the cache
     if (cacheResult) {
@@ -310,7 +331,7 @@ export default class Client {
     return fetch(this.urlPrefix + this._resolve_path(type, handle))
         .then((res: Response) => (res.json()))
         .then(
-            (json: ShopifyInstanceWrapper<T>) =>
+            (json: ShopifyInstanceWrapper<Handle>): T =>
                 this._processResponse.call(this, type, handle, json))
         .catch(defaultErrorHandler);
   }
@@ -319,14 +340,10 @@ export default class Client {
    * The callback handler for the common Shopify lookup Promise. This
    * will automatically write the new value to the cache, or do
    * additional processing on specific types.
-   *
-   * @param {ShopifyTypeStr}type
-   * @param {string}handle
-   * @param {ShopifyInstanceWrapper<ShopifyType<string>>} json
    */
   _processResponse<H extends string>(
-      type: ShopifyTypeStr, handle: H, json: ShopifyInstanceWrapper<H>) {
-    let data: ShopifyType<H>|null;
+      type: ShopifyTypeEnum, handle: H, json: ShopifyInstanceWrapper<H>) {
+    let data: GenericShopifyType|null;
 
     switch (type) {
       case SHOPIFY_TYPE_PRODUCT:
@@ -351,8 +368,8 @@ export default class Client {
     }
 
     // Set the value and flush the storage driver
-    this.cache.set(type, handle, data);
-    this.storage.write(this.cache._cache);
+    this.cache.set(type, data);
+    this.storage.write(this.cache._cache.data);
 
     /**
      * This function is a callback handler for the 2nd collection
@@ -372,12 +389,12 @@ export default class Client {
       // We should also cache all of the products we just
       // grabbed! A great opportunity.
       products.forEach(product => {
-        client.cache.set(SHOPIFY_TYPE_PRODUCT, product.handle, product);
-      })
+        client.cache.set(ShopifyTypeEnum.Product, product);
+      });
 
       // Write the merged collection item
-      client.cache.set(type, handle, finalResult);
-      client.storage.write(client.cache._cache);
+      client.cache.set(ShopifyTypeEnum.Collection, finalResult);
+      client.storage.write(client.cache._cache.data);
 
       return finalResult;
     }

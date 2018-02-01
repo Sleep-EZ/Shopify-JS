@@ -1,4 +1,4 @@
-import {ShopifyTypeStr, ShopifyType, Product, Collection, Page} from './types';
+import {Collection, GenericShopifyType, Page, Product, ShopifyTypeEnum} from './types';
 
 /**
  * Return the current unix time (time since epoch)
@@ -6,27 +6,28 @@ import {ShopifyTypeStr, ShopifyType, Product, Collection, Page} from './types';
  * We only need data resolution to the second.
  */
 export function getCurrentEpoch(): number {
-  return +new Date();
+  return Date.now();
 }
 
-export function pluralizeType(type: ShopifyTypeStr) {
+export function pluralizeType(type: ShopifyTypeEnum) {
   return `${type}s`;
 }
 
-export function isExpired(ts: number, timeout: number) {
-  return ((getCurrentEpoch() - ts) / 1000 > timeout);
+export function isExpired(expiredAt: number) {
+  return (getCurrentEpoch() > expiredAt);
 }
 
-export function __ts_resolve_type(item: ShopifyType<string>): ShopifyType<string> {
-  if('products' in item) {
+export function __ts_resolve_type(item: GenericShopifyType):
+    GenericShopifyType {
+  if ('products' in item) {
     return (item as Collection<string>);
   }
 
-  if('options' in item) {
+  if ('options' in item) {
     return (item as Product<string>);
   }
 
-  if('body_html' in item && !('variants' in item)) {
+  if ('body_html' in item && !('variants' in item)) {
     return (item as Page<string>);
   }
 

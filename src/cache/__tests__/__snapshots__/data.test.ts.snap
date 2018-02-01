@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CacheData generateEmptyCacheData() is unchanged 1`] = `
+Object {
+  "data": Array [],
+  "handles": Object {
+    "collection": Object {},
+    "page": Object {},
+    "product": Object {},
+    "variant": Object {},
+  },
+  "ids": Object {},
+}
+`;
