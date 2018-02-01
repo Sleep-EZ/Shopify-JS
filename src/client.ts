@@ -1,6 +1,6 @@
 const fetch = require('unfetch').default;
 
-import {Cache, CACHE_DEFAULT_CACHE_EXPIRY, CacheData$Values, generateEmptyCacheData} from './cache';
+import {Cache, CACHE_DEFAULT_CACHE_EXPIRY, CacheData$Values, generateEmptyCacheData} from './cache/index';
 import {pluralizeType} from './lib';
 import {Product, Page, Collection, GenericShopifyType, Handle, ShopifyTypeEnum} from './types';
 import {SHOPIFY_TYPE_PRODUCT, SHOPIFY_TYPE_COLLECTION, SHOPIFY_TYPE_PAGE} from './types';

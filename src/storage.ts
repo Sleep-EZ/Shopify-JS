@@ -1,7 +1,7 @@
-import * as localForage from 'localforage';
 
-import {CacheData$Values, CacheOptions} from './cache';
-import {CACHE_DEFAULT_OPTS} from './cache';
+const localForage = require('localforage');
+import {CacheData$Values, CacheOptions} from './cache/index';
+import {CACHE_DEFAULT_OPTS} from './cache/index';
 import {isExpired} from './lib';
 
 function clean_expired(data: CacheData$Values): CacheData$Values {
@@ -42,8 +42,8 @@ export class ForageStorageDriver extends StorageDriver {
 
     console.log('READ');
 
-    return localForage.getItem<CacheData$Values|null>(cacheKey)
-        .then((data) => ((data) ? clean_expired(data) : undefined))
+    return localForage.getItem(cacheKey)
+        .then((data: CacheData$Values|null) => ((data) ? clean_expired(data) : undefined))
         .catch((e: Error) => console.error(e));
   }
 

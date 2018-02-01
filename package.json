@@ -6,28 +6,23 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "dependencies": {
-    "localforage": "^1.5.5"
+    "localforage": "^1.5.6"
   },
   "devDependencies": {
     "@types/core-js": "^0.9.44",
     "@types/jest": "^22.0.1",
     "@types/node": "^8.5.7",
-    "awesome-typescript-loader": "^3.4.1",
     "fetch-mock": "^6.0.0",
     "gts": "^0.5.3",
     "isomorphic-fetch": "^2.2.1",
     "jest": "^22.1.4",
     "shx": "^0.2.2",
-    "source-map-loader": "^0.2.3",
     "ts-jest": "^22.0.1",
-    "tslint": "^5.8.0",
-    "tslint-eslint-rules": "^4.1.1",
     "typedoc": "^0.10.0",
-    "typescript": "^2.7",
-    "webpack": "^3.10.0"
+    "typescript": "^2.7"
   },
   "scripts": {
-    "compile": "tsc -p . && shx cp package.json build/package.json",
+    "compile": "tsc -p .",
     "watch": "webpack --progress --watch",
     "check": "gts check",
     "clean": "gts clean",
