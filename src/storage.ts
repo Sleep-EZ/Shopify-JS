@@ -4,8 +4,9 @@ import {CacheData$Values, CacheOptions} from './cache/index';
 import {CACHE_DEFAULT_OPTS} from './cache/index';
 import {isExpired} from './lib';
 
-function clean_expired(data: CacheData$Values): CacheData$Values {
+function clean_expired(data: CacheData$Values|null): CacheData$Values {
   const cleaned: CacheData$Values = [];
+  if (!data) return cleaned;
 
   data.forEach(item => {
     if (item && !isExpired(item.__expires)) {
@@ -43,7 +44,7 @@ export class ForageStorageDriver extends StorageDriver {
     console.log('READ');
 
     return localForage.getItem(cacheKey)
-        .then((data: CacheData$Values|null) => ((data) ? clean_expired(data) : undefined))
+        .then((data: CacheData$Values|null) => (clean_expired(data)))
         .catch((e: Error) => console.error(e));
   }
 

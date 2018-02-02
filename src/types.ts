@@ -9,17 +9,13 @@ export enum ShopifyTypeEnum {
   Variant = 'variant',
 }
 
-export const SHOPIFY_TYPE_PRODUCT = ShopifyTypeEnum.Product;
-export const SHOPIFY_TYPE_COLLECTION = ShopifyTypeEnum.Collection;
-export const SHOPIFY_TYPE_PAGE = ShopifyTypeEnum.Page;
-export const SHOPIFY_TYPE_VARIANT = ShopifyTypeEnum.Variant;
 
 /**
  * A type for representing any one of the three available
  * Shopify types.
  */
 export type GenericShopifyType =
-    Indexable&(Product<Handle>|Collection<Handle>|Page<Handle>|Variant);
+    Indexable&Expires&(Product<Handle>|Collection<Handle>|Page<Handle>|Variant);
 
 /**
  * The type extended by the three primary types: **Page**,
@@ -56,7 +52,7 @@ export type Product<H extends Handle> = Indexable&Expires&{
   variants: Variant[],
   options: Option[],
   images: Image[],
-  image: Image|null,
+  image: Image | null,
   created_at: Date,
   updated_at: Date,
   published_at: Date,
@@ -107,7 +103,7 @@ export type Variant = Indexable&Expires&{
   taxable: boolean,
   barcode: string | null,
   grams: number,
-  image_id: number|null,
+  image_id: number | null,
   inventory_quantity: number,
   weight: number,
   weight_unit: string,

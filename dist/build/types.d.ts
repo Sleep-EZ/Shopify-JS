@@ -7,15 +7,11 @@ export declare enum ShopifyTypeEnum {
     Page = "page",
     Variant = "variant",
 }
-export declare const SHOPIFY_TYPE_PRODUCT: ShopifyTypeEnum;
-export declare const SHOPIFY_TYPE_COLLECTION: ShopifyTypeEnum;
-export declare const SHOPIFY_TYPE_PAGE: ShopifyTypeEnum;
-export declare const SHOPIFY_TYPE_VARIANT: ShopifyTypeEnum;
 /**
  * A type for representing any one of the three available
  * Shopify types.
  */
-export declare type GenericShopifyType = Indexable & (Product<Handle> | Collection<Handle> | Page<Handle> | Variant);
+export declare type GenericShopifyType = Indexable & Expires & (Product<Handle> | Collection<Handle> | Page<Handle> | Variant);
 /**
  * The type extended by the three primary types: **Page**,
  * **Product**, and **Collection**. This secret value is

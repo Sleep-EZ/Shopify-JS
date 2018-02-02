@@ -1,7 +1,8 @@
-import {isExpired, getCurrentEpoch} from '../lib';
+import {getCurrentEpoch, isExpired} from '../lib';
 import {Collection, GenericShopifyType, Handle, Page, Product, ShopifyTypeEnum} from '../types';
+
 import {CacheData, CacheData$Values, indexSingleElement, rebuildCache} from './data';
-import { generateEmptyCacheData } from './index';
+import {generateEmptyCacheData} from './index';
 
 /**
  * This will be the key that will be suffixed to every
@@ -133,9 +134,11 @@ export class Cache {
    *
    * @return {void}
    */
-  set(type: ShopifyTypeEnum, value: GenericShopifyType, expires?: number): void {
+  set(type: ShopifyTypeEnum, value: GenericShopifyType,
+      expires?: number): void {
     // Let's modify the incoming value and give it an expiration time
-    const expiresAt = expires || (getCurrentEpoch() + (this.options.cacheTimeout * 1000));
+    const expiresAt =
+        expires || (getCurrentEpoch() + (this.options.cacheTimeout * 1000));
     value.__expires = expiresAt;
     value.__type = type;
 

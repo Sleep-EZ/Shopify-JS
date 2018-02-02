@@ -72,7 +72,7 @@ export function indexSingleElement(
 
     product.variants.forEach(variant => {
       const variantId = variant.id;
-      let newPos = ids[variantId] || data.data.length;
+      const newPos = ids[variantId] || data.data.length;
 
       if (!(variantId in ids)) {
         ids[variantId] = newPos;

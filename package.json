@@ -2,27 +2,30 @@
   "name": "shopify-js",
   "license": "AGPL-3.0",
   "version": "0.0.1",
-  "browser": "dist/shopify-js.browser.js",
-  "main": "build/index.js",
-  "types": "build/index.d.ts",
+  "browser": "dist/main.js",
+  "main": "dist/main.js",
+  "types": "dist/build/index.d.ts",
   "dependencies": {
     "localforage": "^1.5.6"
   },
   "devDependencies": {
     "@types/core-js": "^0.9.44",
+    "@types/isomorphic-fetch": "^0.0.34",
     "@types/jest": "^22.0.1",
-    "@types/node": "^8.5.7",
     "fetch-mock": "^6.0.0",
     "gts": "^0.5.3",
     "isomorphic-fetch": "^2.2.1",
     "jest": "^22.1.4",
     "shx": "^0.2.2",
     "ts-jest": "^22.0.1",
+    "ts-loader": "^3.4.0",
+    "ts-node": "^4.1.0",
     "typedoc": "^0.10.0",
-    "typescript": "^2.7"
+    "typescript": "^2.7",
+    "webpack": "^3.10.0"
   },
   "scripts": {
-    "compile": "tsc -p .",
+    "compile": "webpack",
     "watch": "webpack --progress --watch",
     "check": "gts check",
     "clean": "gts clean",
@@ -31,7 +34,7 @@
     "pretest": "npm run compile",
     "posttest": "npm run check",
     "test": "jest",
-    "docs": "typedoc --excludePrivate --excludeNotExported --out docs/ src/"
+    "docs": "typedoc --excludePrivate --exclude **/*.test.ts --out docs/ src/"
   },
   "jest": {
     "collectCoverage": true,

@@ -1,5 +1,9 @@
-export * from './client';
-export * from './cache/index';
-export * from './storage';
-export * from './types';
-export * from './lib';
+import {Client} from './client';
+import {ForageStorageDriver} from './storage';
+
+export = {
+  Client,
+  Storage: {
+    ForageStorageDriver,
+  }
+};

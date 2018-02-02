@@ -14,7 +14,7 @@ import { StorageDriver } from './storage';
  */
 export declare type ShopifyInstanceWrapper<H extends Handle> = {
     product: Product<H>;
-    products: Array<Product<string>>;
+    products: Array<Product<Handle>>;
     page: Page<H>;
     collection: Collection<H>;
 };
@@ -69,7 +69,7 @@ export declare class Client {
      *
      * @return {string}         The resolved URL of the JSON Shopify object
      */
-    _resolve_path(type: ShopifyTypeEnum, handle: string, ...extra: string[]): string;
+    _resolve_path(type: ShopifyTypeEnum, handle: Handle, ...extra: string[]): string;
     /**
      * Given an array of `handle`s, will return the result of a
      * `Promise.all()` call, FIFO order.
@@ -79,7 +79,7 @@ export declare class Client {
      * @return {Promise<Product<T>>}    Returns a Promise with the result of
      *                                  each Shopify item.
      */
-    getProducts<T extends string>(handles: T[]): Promise<Array<Product<T>>>;
+    getProducts<T extends Handle>(handles: T[]): Promise<Array<Product<T> | null>>;
     /**
      * Given the `handle` of a `Product`, will return a Promise
      * that will resolve to the requested Product.
@@ -96,7 +96,7 @@ export declare class Client {
      * @return  {Promise<Product<T>>} A promise that returns either
      *                                the Shopify product, or null.
      */
-    getProduct<T extends string>(handle: T): Promise<Product<T>>;
+    getProduct<T extends Handle>(handle: T): Promise<Product<T> | null>;
     /**
      * Given an array of `handle`s, will return the result of a
      * `Promise.all()` call, FIFO order.
@@ -106,7 +106,7 @@ export declare class Client {
      * @return {Promise<Collection<T>>}    Returns a Promise with the result of
      *                                  each Shopify item.
      */
-    getCollections<T extends string>(handles: T[]): Promise<Array<Collection<T>>>;
+    getCollections<T extends Handle>(handles: T[]): Promise<Array<Collection<T> | null>>;
     /**
      * Given the `handle` of a `Collection`, will return a Promise
      * that will resolve to the requested Collection.
@@ -123,7 +123,7 @@ export declare class Client {
      * @return  {Promise<Collection<T>>} A promise that returns either
      *                                   the Shopify collection, or null.
      */
-    getCollection<T extends string>(handle: T): Promise<Collection<T>>;
+    getCollection<T extends Handle>(handle: T): Promise<Collection<T> | null>;
     /**
      * Retrieves the array of products belonging to a collection
      * with Shopify's JSON API. The actual collection object response
@@ -137,7 +137,7 @@ export declare class Client {
      * @return {Promise<Product<string>[]>} Returns a Promise that
      *                          resolves to a list of Product items.
      */
-    getCollectionProducts(handle: string): Promise<Array<Product<string>>>;
+    getCollectionProducts(handle: string): Promise<Array<Product<Handle>> | null>;
     /**
      * Given an array of `handle`s, will return the result of a
      * `Promise.all()` call, FIFO order.
@@ -147,7 +147,7 @@ export declare class Client {
      * @return {Promise<Page<T>>}    Returns a Promise with the result of
      *                                  each Shopify item.
      */
-    getPages<T extends string>(handles: T[]): Promise<Array<Page<T>>>;
+    getPages<T extends string>(handles: T[]): Promise<Array<Page<T> | null>>;
     /**
      * Given the `handle` of a `Page`, will return a Promise
      * that will resolve to the requested Page.
@@ -164,7 +164,7 @@ export declare class Client {
      * @return  {Promise<Page<T>>} A promise that returns either
      *                             the Shopify page, or null.
      */
-    getPage<T extends string>(handle: T): Promise<Page<T>>;
+    getPage<T extends Handle>(handle: T): Promise<Page<T> | null>;
     /**
      * The primary method for retrieving Shopify items from
      * either the JSON API or our local cache
@@ -172,11 +172,11 @@ export declare class Client {
      * @param   {ShopifyTypeEnum}   type    The Shopify type to target (product, collection, page)
      * @param   {string}            handle  The handle of the Shopify item to resolve
      */
-    get<T extends GenericShopifyType>(type: ShopifyTypeEnum, handle: string): Promise<GenericShopifyType>;
+    get<T extends GenericShopifyType>(type: ShopifyTypeEnum, handle: string): Promise<T | null>;
     /**
      * The callback handler for the common Shopify lookup Promise. This
      * will automatically write the new value to the cache, or do
      * additional processing on specific types.
      */
-    _processResponse<H extends string>(type: ShopifyTypeEnum, handle: H, json: ShopifyInstanceWrapper<H>): Promise<Collection<H>>;
+    _processResponse<T extends GenericShopifyType>(type: ShopifyTypeEnum, handle: Handle, json: ShopifyInstanceWrapper<Handle>): Promise<T | null>;
 }
