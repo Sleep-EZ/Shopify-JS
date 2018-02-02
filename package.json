@@ -1,5 +1,5 @@
 {
-  "name": "shopify-js",
+  "name": "@sleepez/shopify-js",
   "license": "AGPL-3.0",
   "version": "0.0.1",
   "browser": "dist/main.js",
