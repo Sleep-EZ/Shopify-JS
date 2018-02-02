@@ -6,9 +6,20 @@ node_js:
   - node
   - lts/*
 
+before_script:
+  - npm install codecov -g
+
 script:
   - yarn run test
 
 after_success:
   - yarn run docs
+  - cp .nojekyll
   - npm pack
+  - codecov
+
+deploy:
+  - provider: pages
+    skip_cleanup: true
+    local_dir: docs/
+    github_token: $GITHUB_TOKEN
