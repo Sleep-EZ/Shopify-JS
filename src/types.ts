@@ -1,3 +1,17 @@
+// Copyright (C) 2018 Sleep EZ USA / Evan Darwin
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
  * A type for each Shopify type in it's string form
@@ -9,17 +23,13 @@ export enum ShopifyTypeEnum {
   Variant = 'variant',
 }
 
-export const SHOPIFY_TYPE_PRODUCT = ShopifyTypeEnum.Product;
-export const SHOPIFY_TYPE_COLLECTION = ShopifyTypeEnum.Collection;
-export const SHOPIFY_TYPE_PAGE = ShopifyTypeEnum.Page;
-export const SHOPIFY_TYPE_VARIANT = ShopifyTypeEnum.Variant;
 
 /**
  * A type for representing any one of the three available
  * Shopify types.
  */
 export type GenericShopifyType =
-    Indexable&(Product<Handle>|Collection<Handle>|Page<Handle>|Variant);
+    Indexable&Expires&(Product<Handle>|Collection<Handle>|Page<Handle>|Variant);
 
 /**
  * The type extended by the three primary types: **Page**,
@@ -56,7 +66,7 @@ export type Product<H extends Handle> = Indexable&Expires&{
   variants: Variant[],
   options: Option[],
   images: Image[],
-  image: Image|null,
+  image: Image | null,
   created_at: Date,
   updated_at: Date,
   published_at: Date,
@@ -107,7 +117,7 @@ export type Variant = Indexable&Expires&{
   taxable: boolean,
   barcode: string | null,
   grams: number,
-  image_id: number|null,
+  image_id: number | null,
   inventory_quantity: number,
   weight: number,
   weight_unit: string,

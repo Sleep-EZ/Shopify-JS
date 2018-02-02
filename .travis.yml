@@ -4,12 +4,7 @@ node_js:
   - 7
   - 8
   - node
-  - iojs
   - lts/*
-
-before_script:
-  - yarn run setup
-  - yarn run compile
 
 script:
   - yarn run test

@@ -1,10 +1,24 @@
-const fetch = require('unfetch').default;
+// Copyright (C) 2018 Sleep EZ USA / Evan Darwin
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import {Cache, CACHE_DEFAULT_CACHE_EXPIRY, CacheData$Values, generateEmptyCacheData} from './cache';
+import * as fetch from 'isomorphic-fetch';
+
+import {Cache, CACHE_DEFAULT_CACHE_EXPIRY, CacheData$Values, generateEmptyCacheData} from './cache/index';
 import {pluralizeType} from './lib';
-import {Product, Page, Collection, GenericShopifyType, Handle, ShopifyTypeEnum} from './types';
-import {SHOPIFY_TYPE_PRODUCT, SHOPIFY_TYPE_COLLECTION, SHOPIFY_TYPE_PAGE} from './types';
 import {StorageDriver} from './storage';
+import {Collection, GenericShopifyType, Handle, Page, Product, ShopifyTypeEnum} from './types';
 
 /**
  * TODO: Improve error handling, this is just a placeholder
@@ -15,9 +29,8 @@ import {StorageDriver} from './storage';
  * @param {Error} err   The error that was thrown
  */
 function defaultErrorHandler(err: Error) {
-  if (console && console.log) {
-    console.log('Failed to read Shopify response\n');
-    console.log(err);
+  if (window.console && console.error) {
+    console.error(err);
   }
 
   return null;
@@ -36,7 +49,7 @@ function defaultErrorHandler(err: Error) {
  */
 export type ShopifyInstanceWrapper<H extends Handle> = {
   product: Product<H>,
-  products: Array<Product<string>>,
+  products: Array<Product<Handle>>,
   page: Page<H>,
   collection: Collection<H>,
 };
@@ -149,7 +162,7 @@ export class Client {
    *
    * @return {string}         The resolved URL of the JSON Shopify object
    */
-  _resolve_path(type: ShopifyTypeEnum, handle: string, ...extra: string[]) {
+  _resolve_path(type: ShopifyTypeEnum, handle: Handle, ...extra: string[]) {
     // Pluralize the Shopify type string (product => products)
     const pluralType = pluralizeType(type);
 
@@ -166,7 +179,7 @@ export class Client {
    * @return {Promise<Product<T>>}    Returns a Promise with the result of
    *                                  each Shopify item.
    */
-  getProducts<T extends string>(handles: T[]): Promise<Array<Product<T>>> {
+  getProducts<T extends Handle>(handles: T[]): Promise<Array<Product<T>|null>> {
     return Promise.all(handles.map(handle => this.getProduct<T>(handle)));
   }
 
@@ -186,10 +199,8 @@ export class Client {
    * @return  {Promise<Product<T>>} A promise that returns either
    *                                the Shopify product, or null.
    */
-  getProduct<T extends string>(handle: T): Promise<Product<T>> {
-    return (
-        this.get<Product<T>>(SHOPIFY_TYPE_PRODUCT, handle) as
-        Promise<Product<T>>);
+  getProduct<T extends Handle>(handle: T): Promise<Product<T>|null> {
+    return this.get(ShopifyTypeEnum.Product, handle) as Promise<Product<T>>;
   }
 
   /**
@@ -201,9 +212,9 @@ export class Client {
    * @return {Promise<Collection<T>>}    Returns a Promise with the result of
    *                                  each Shopify item.
    */
-  getCollections<T extends string>(handles: T[]):
-      Promise<Array<Collection<T>>> {
-    return Promise.all(handles.map(handle => this.getCollection<T>(handle)));
+  getCollections<T extends Handle>(handles: T[]):
+      Promise<Array<Collection<T>|null>> {
+    return Promise.all(handles.map(handle => this.getCollection(handle)));
   }
 
   /**
@@ -222,10 +233,9 @@ export class Client {
    * @return  {Promise<Collection<T>>} A promise that returns either
    *                                   the Shopify collection, or null.
    */
-  getCollection<T extends string>(handle: T): Promise<Collection<T>> {
-    return (
-        this.get<Collection<T>>(SHOPIFY_TYPE_COLLECTION, handle) as
-        Promise<Collection<T>>);
+  getCollection<T extends Handle>(handle: T): Promise<Collection<T>|null> {
+    return this.get(ShopifyTypeEnum.Collection, handle) as
+        Promise<Collection<T>|null>;
   }
 
   /**
@@ -241,17 +251,22 @@ export class Client {
    * @return {Promise<Product<string>[]>} Returns a Promise that
    *                          resolves to a list of Product items.
    */
-  getCollectionProducts(handle: string): Promise<Array<Product<string>>> {
+  getCollectionProducts(handle: string): Promise<Array<Product<Handle>>|null> {
     // The collection type must also retrieve the list of products,
     // which is a separate HTTP request.
     const url = this.urlPrefix +
-        this._resolve_path(SHOPIFY_TYPE_COLLECTION, handle, 'products');
+        this._resolve_path(ShopifyTypeEnum.Collection, handle, 'products');
+
 
     return fetch(url)
-        .then((res: Response) => (res.json()))
-        .then((products: {products: Array<Product<string>>}) => {
-          return products.products;
-        })
+        .then((res) => res.json())
+        .then(
+            (products: {products: Array<Product<Handle>>}):
+                Array<Product<Handle>> => {
+                  if (!products) return [];
+
+                  return products.products;
+                })
         .catch(defaultErrorHandler);
   }
 
@@ -264,7 +279,7 @@ export class Client {
    * @return {Promise<Page<T>>}    Returns a Promise with the result of
    *                                  each Shopify item.
    */
-  getPages<T extends string>(handles: T[]): Promise<Array<Page<T>>> {
+  getPages<T extends string>(handles: T[]): Promise<Array<Page<T>|null>> {
     return Promise.all(handles.map((handle) => this.getPage<T>(handle)));
   }
 
@@ -284,8 +299,8 @@ export class Client {
    * @return  {Promise<Page<T>>} A promise that returns either
    *                             the Shopify page, or null.
    */
-  getPage<T extends string>(handle: T): Promise<Page<T>> {
-    return (this.get<Page<T>>(SHOPIFY_TYPE_PAGE, handle) as Promise<Page<T>>);
+  getPage<T extends Handle>(handle: T): Promise<Page<T>|null> {
+    return this.get(ShopifyTypeEnum.Page, handle) as Promise<Page<T>|null>;
   }
 
   /**
@@ -296,7 +311,7 @@ export class Client {
    * @param   {string}            handle  The handle of the Shopify item to resolve
    */
   get<T extends GenericShopifyType>(type: ShopifyTypeEnum, handle: string):
-      Promise<GenericShopifyType> {
+      Promise<T|null> {
     // Check that the type is known
     if (!Object.values(ShopifyTypeEnum).includes(type)) {
       throw new Error(`Refusing to get unknown Shopify type '${type}'`);
@@ -324,15 +339,16 @@ export class Client {
 
     // Return immediately if we hit the cache
     if (cacheResult) {
-      return Promise.resolve(cacheResult);
+      return Promise.resolve(cacheResult as T);
     }
 
     // Otherwise, request it from Shopify
     return fetch(this.urlPrefix + this._resolve_path(type, handle))
         .then((res: Response) => (res.json()))
         .then(
-            (json: ShopifyInstanceWrapper<Handle>): T =>
-                this._processResponse.call(this, type, handle, json))
+            (json: ShopifyInstanceWrapper<Handle>) =>
+                this._processResponse(type, handle, json))
+        .then((results) => (results as T | null))
         .catch(defaultErrorHandler);
   }
 
@@ -341,20 +357,21 @@ export class Client {
    * will automatically write the new value to the cache, or do
    * additional processing on specific types.
    */
-  _processResponse<H extends string>(
-      type: ShopifyTypeEnum, handle: H, json: ShopifyInstanceWrapper<H>) {
+  _processResponse<T extends GenericShopifyType>(
+      type: ShopifyTypeEnum, handle: Handle,
+      json: ShopifyInstanceWrapper<Handle>): Promise<T|null> {
     let data: GenericShopifyType|null;
 
     switch (type) {
-      case SHOPIFY_TYPE_PRODUCT:
+      case ShopifyTypeEnum.Product:
         data = json.product;
         break;
 
-      case SHOPIFY_TYPE_PAGE:
+      case ShopifyTypeEnum.Page:
         data = json.page;
         break;
 
-      case SHOPIFY_TYPE_COLLECTION:
+      case ShopifyTypeEnum.Collection:
         data = json.collection;
         break;
 
@@ -380,9 +397,9 @@ export class Client {
      *                            belonging to the collection.
      */
     function mergeCollectionItems(
-        products: Array<Product<string>>, client: Client): Collection<H> {
-      const finalResult: Collection<H> = {
-        ...(data as Collection<H>),
+        products: Array<Product<Handle>>, client: Client): Collection<Handle> {
+      const finalResult: Collection<Handle> = {
+        ...(data as Collection<Handle>),
         products,
       };
 
@@ -399,7 +416,14 @@ export class Client {
       return finalResult;
     }
 
-    return this.getCollectionProducts(handle).then(
-        (products) => mergeCollectionItems(products, this));
+    if (type === ShopifyTypeEnum.Collection) {
+      return this.getCollectionProducts(handle).then((products) => {
+        if (!products) return null;
+
+        return mergeCollectionItems(products, this) as T;
+      });
+    } else {
+      return Promise.resolve(data as T);
+    }
   }
 }

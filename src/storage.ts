@@ -1,11 +1,27 @@
-import * as localForage from 'localforage';
+// Copyright (C) 2018 Sleep EZ USA / Evan Darwin
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import {CacheData$Values, CacheOptions} from './cache';
-import {CACHE_DEFAULT_OPTS} from './cache';
+
+const localForage = require('localforage');
+import {CacheData$Values, CacheOptions} from './cache/index';
+import {CACHE_DEFAULT_OPTS} from './cache/index';
 import {isExpired} from './lib';
 
-function clean_expired(data: CacheData$Values): CacheData$Values {
+function clean_expired(data: CacheData$Values|null): CacheData$Values {
   const cleaned: CacheData$Values = [];
+  if (!data) return cleaned;
 
   data.forEach(item => {
     if (item && !isExpired(item.__expires)) {
@@ -42,8 +58,8 @@ export class ForageStorageDriver extends StorageDriver {
 
     console.log('READ');
 
-    return localForage.getItem<CacheData$Values|null>(cacheKey)
-        .then((data) => ((data) ? clean_expired(data) : undefined))
+    return localForage.getItem(cacheKey)
+        .then((data: CacheData$Values|null) => (clean_expired(data)))
         .catch((e: Error) => console.error(e));
   }
 

@@ -1,7 +1,23 @@
-import {isExpired, getCurrentEpoch} from '../lib';
+// Copyright (C) 2018 Sleep EZ USA / Evan Darwin
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import {getCurrentEpoch, isExpired} from '../lib';
 import {Collection, GenericShopifyType, Handle, Page, Product, ShopifyTypeEnum} from '../types';
+
 import {CacheData, CacheData$Values, indexSingleElement, rebuildCache} from './data';
-import { generateEmptyCacheData } from './index';
+import {generateEmptyCacheData} from './index';
 
 /**
  * This will be the key that will be suffixed to every
@@ -133,9 +149,11 @@ export class Cache {
    *
    * @return {void}
    */
-  set(type: ShopifyTypeEnum, value: GenericShopifyType, expires?: number): void {
+  set(type: ShopifyTypeEnum, value: GenericShopifyType,
+      expires?: number): void {
     // Let's modify the incoming value and give it an expiration time
-    const expiresAt = expires || (getCurrentEpoch() + (this.options.cacheTimeout * 1000));
+    const expiresAt =
+        expires || (getCurrentEpoch() + (this.options.cacheTimeout * 1000));
     value.__expires = expiresAt;
     value.__type = type;
 
