@@ -1,6 +1,6 @@
 import { Cache, CacheData$Values } from './cache/index';
-import { Product, Page, Collection, GenericShopifyType, Handle, ShopifyTypeEnum } from './types';
 import { StorageDriver } from './storage';
+import { Collection, GenericShopifyType, Handle, Page, Product, ShopifyTypeEnum } from './types';
 /**
  * This type describes the response container that
  * Shopify responds with in their JSON API. For example,

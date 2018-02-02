@@ -6,10 +6,6 @@ node_js:
   - node
   - lts/*
 
-before_script:
-  - yarn run check
-  - yarn run compile
-
 script:
   - yarn run test
 
