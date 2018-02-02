@@ -7,7 +7,7 @@ node_js:
   - lts/*
 
 before_script:
-  - yarn run setup
+  - yarn run check
   - yarn run compile
 
 script:
