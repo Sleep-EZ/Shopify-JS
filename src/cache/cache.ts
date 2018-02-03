@@ -13,34 +13,47 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import {generateEmptyCacheData} from './index';
 import {getCurrentEpoch, isExpired} from '../lib';
 import {Collection, GenericShopifyType, Handle, Page, Product, ShopifyTypeEnum} from '../types';
-
 import {CacheData, CacheData$Values, indexSingleElement, rebuildCache} from './data';
-import {generateEmptyCacheData} from './index';
 
 /**
- * This will be the key that will be suffixed to every
- * complete Shopify cache entry that is saved in the cache.
- *
- * The current UNIX (epoch) timestamp is stored to allow
- * for cached items to expire after a short period of time,
- * ensuring accuracy.
+ * This _internal_ property name is suffixed to each object returned 
+ * via Shopify-JS. Used by the caching system, determines when a cached
+ * object is deemed to be expired and should be re-fetched from Shopify.
+ * 
+ * An example of how this is calculated:
+ * <pre>
+ *   __expires = Date.now() + ([[CACHE_DEFAULT_CACHE_EXPIRY]] * 1000)
+ * </pre>
+ * 
+ * This value is an epoch timestamp in milliseconds. See the MDN documentation
+ * for [Date.now()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now)
+ * for detailed information about the JS timestamp format.
  */
 export const CACHE_TS_KEY = '__expires';
 
 /**
- * `OBJ_CACHE_DEFAULT_CACHE_EXPIRY` describes the time
- * in seconds until a record in the cache will be declared
- * out of date, and be removed during access-time.
+ * The offset in seconds that will be added to the [[CACHE_TS_KEY]] value in
+ * each Shopify object. This value determines when the cached object will be
+ * declared out of date, and is automatically removed by the cache on access.
+ * 
+ * @default **300 seconds**
  */
 export const CACHE_DEFAULT_CACHE_EXPIRY = 300;  // 5 minutes
 
 
 /**
- * Options for the Cache object
+ * Configurable options that can be passed to the [[Cache]] instance
+ * during creation
  */
 export const CACHE_DEFAULT_OPTS: CacheOptions = {
+  /**
+   * The timeout in seconds, for more documentation see [[CACHE_DEFAULT_CACHE_EXPIRY]].
+   * 
+   * <pre>const cache = new Cache({ cacheTimeout: 60 }); // 1 minute</pre>
+   */
   cacheTimeout: CACHE_DEFAULT_CACHE_EXPIRY,
 };
 
