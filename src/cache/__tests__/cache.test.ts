@@ -106,4 +106,37 @@ describe('Cache', () => {
     expect(cache.getProduct('test')).toEqual(null);
     expect(cache.getCollection('test')).toEqual(collection);
   });
+
+  describe('cache item expiration', () => {
+    const testPage = testCreatePage({id: 1, handle: 'test'});
+
+    it('skips if already expired', () => {
+      const cache = new Cache();
+      cache.set(ShopifyTypeEnum.Page, testPage);
+      cache._cache.ids[1] = null;
+
+      // Is null, thus already set as expired
+      cache._delete_if_expired(1);
+      expect(cache._cache.ids[1]).toEqual(null);
+    });
+
+    it('skips if not expired', () => {
+      const cache = new Cache();
+      cache.set(ShopifyTypeEnum.Page, testPage);
+
+      // Should be valid still
+      cache._delete_if_expired(1);
+      expect(cache._cache.ids[1]).toEqual(testPage);
+    });
+
+    it('nulls the value if it has expired', () => {
+      const cache = new Cache();
+      const expiredPage = testCreatePage({id: 1});
+      cache.set(ShopifyTypeEnum.Page, expiredPage, 10);
+
+      // Should trigger an expiration
+      cache._delete_if_expired(1);
+      expect(cache._cache.ids[1]).toBeNull();
+    });
+  });
 });

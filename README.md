@@ -1,4 +1,4 @@
-<div style="text-align: center">
+<p align="center">
 <h1><strong>Shopify-JS</strong></h1>
 <p>Use ES6's fetch and Promises to retrieve Shopify data in your browser app.</p>
 
@@ -7,7 +7,7 @@
 [![Downloads](https://img.shields.io/npm/dm/@sleepez/shopify-js.svg)](https://www.npmjs.com/package/@sleepez/shopify-js)
 [![codecov](https://codecov.io/gh/Sleep-EZ/Shopify-JS/branch/develop/graph/badge.svg)](https://codecov.io/gh/Sleep-EZ/Shopify-JS)
 [![DeepScan Grade](https://deepscan.io/api/projects/1821/branches/8025/badge/grade.svg)](https://deepscan.io/dashboard/#view=project&pid=1821&bid=8025)
-</div>
+</p>
 
 <hr/>
 
