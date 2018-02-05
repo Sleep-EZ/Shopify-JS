@@ -18,13 +18,13 @@ export declare type GenericShopifyType = Indexable & Expires & (Product<Handle> 
  * suffixed to each object with the UNIX timestamp of when
  * the value was written. This is used for cache expiration.
  */
-export declare type Expires = {
+export interface Expires {
     __expires: number;
     __type: ShopifyTypeEnum;
-};
-export declare type Indexable = {
+}
+export interface Indexable {
     id: number;
-};
+}
 export declare type Handle = string;
 /**
  * == Product
@@ -33,7 +33,7 @@ export declare type Handle = string;
  * JSON API. (WARNING: These are subject to change at Shopify's
  * descretion without warning!)
  */
-export declare type Product<H extends Handle> = Indexable & Expires & {
+export interface Product<H extends Handle> extends Indexable, Expires {
     title: string;
     handle: H;
     body_html: string | null;
@@ -49,11 +49,11 @@ export declare type Product<H extends Handle> = Indexable & Expires & {
     created_at: Date;
     updated_at: Date;
     published_at: Date;
-};
+}
 /**
  * A Shopify image object, typically found in the Product response.
  */
-export declare type Image = Indexable & {
+export interface Image extends Indexable {
     product_id: number;
     position: number;
     created_at: Date;
@@ -62,20 +62,20 @@ export declare type Image = Indexable & {
     height: number;
     src: string;
     variant_ids: number[];
-};
+}
 /**
  * A product option
  */
-export declare type Option = Indexable & {
+export interface Option extends Indexable {
     product_id: number;
     name: string;
     position: number;
     values: string[];
-};
+}
 /**
  * A product variant
  */
-export declare type Variant = Indexable & Expires & {
+export interface Variant extends Indexable, Expires {
     product_id: number;
     title: string;
     price: number;
@@ -100,18 +100,18 @@ export declare type Variant = Indexable & Expires & {
     inventory_item_id: number;
     old_inventory_quantity: number;
     requires_shipping: boolean;
-};
+}
 /**
  * A Shopify page element
  */
-export declare type Page<H> = Indexable & Expires & {
+export interface Page<H> extends Indexable, Expires {
     title: string;
     handle: H;
     body_html: string;
     created_at: Date;
     published_at: Date;
     updated_at: Date;
-};
+}
 /**
  * A Shopify collection.
  *
@@ -119,7 +119,7 @@ export declare type Page<H> = Indexable & Expires & {
  * to fully resolve this. The original collection data,
  * and it's products (`collection.products`).
  */
-export declare type Collection<H> = Indexable & Expires & {
+export interface Collection<H> extends Indexable, Expires {
     title: string;
     handle: H;
     description: string;
@@ -128,4 +128,4 @@ export declare type Collection<H> = Indexable & Expires & {
     image: Image | null;
     products_count: number;
     products: Array<Product<string>>;
-};
+}
