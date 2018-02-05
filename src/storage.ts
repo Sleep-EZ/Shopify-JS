@@ -15,12 +15,12 @@
 
 
 const localForage = require('localforage');
-import {CacheData$Values, CacheOptions} from './cache/index';
+import {CacheData$Value, CacheOptions} from './cache/index';
 import {CACHE_DEFAULT_OPTS} from './cache/index';
 import {isExpired} from './lib';
 
-function clean_expired(data: CacheData$Values|null): CacheData$Values {
-  const cleaned: CacheData$Values = [];
+function clean_expired(data: CacheData$Value[]|null): CacheData$Value[] {
+  const cleaned: CacheData$Value[] = [];
   if (!data) return cleaned;
 
   data.forEach(item => {
@@ -41,11 +41,11 @@ export class StorageDriver {
     this.opts = opts || CACHE_DEFAULT_OPTS;
   }
 
-  read(): Promise<CacheData$Values|void> {
+  read(): Promise<CacheData$Value[]|void> {
     return Promise.resolve([]);
   }
 
-  write(data: CacheData$Values): Promise<boolean> {
+  write(data: CacheData$Value[]): Promise<boolean> {
     console.log('WRITE: ' + data.length);  // TODO: Make unused param, used...
 
     return Promise.resolve(true);
@@ -53,17 +53,17 @@ export class StorageDriver {
 }
 
 export class ForageStorageDriver extends StorageDriver {
-  read(): Promise<CacheData$Values|void> {
+  read(): Promise<CacheData$Value[]|void> {
     const cacheKey = StorageDriver.DEFAULT_CACHE_KEY_NAME;
 
     console.log('READ');
 
     return localForage.getItem(cacheKey)
-        .then((data: CacheData$Values|null) => (clean_expired(data)))
+        .then((data: CacheData$Value[]|null) => (clean_expired(data)))
         .catch((e: Error) => console.error(e));
   }
 
-  write(data: CacheData$Values): Promise<boolean> {
+  write(data: CacheData$Value[]): Promise<boolean> {
     const cacheKey = StorageDriver.DEFAULT_CACHE_KEY_NAME;
 
     return localForage.setItem(cacheKey, data).then(() => true);

@@ -125,7 +125,7 @@ export declare type Collection<H> = Indexable & Expires & {
     description: string;
     published_at: Date;
     updated_at: Date;
-    image: Image;
+    image: Image | null;
     products_count: number;
     products: Array<Product<string>>;
 };

@@ -16,14 +16,18 @@
 import {Collection, GenericShopifyType, Handle, Product, ShopifyTypeEnum} from '../types';
 
 /**
- * This constant is the structure of an empty Shopify-JS
- * cache. Other files reference this constant to ensure
- * continuity.
+ * This function generates a new [[CacheData]] object. We made this
+ * a function so that the newly created [[CacheData]] (<u>and it's
+ * children</u>) are **NOT** returned as a reference. All code that
+ * creates a new Cache instance should reference this method.
+ *
+ * We want to ensure that if you want to have multiple stores with
+ * different URLs, that their caches should not mix (we test for this
+ * as well).
  */
 export function generateEmptyCacheData(): CacheData {
   return {
     ids: {},
-    data: [],
     handles: {
       [ShopifyTypeEnum.Collection]: {},
       [ShopifyTypeEnum.Page]: {},
@@ -33,11 +37,44 @@ export function generateEmptyCacheData(): CacheData {
   };
 }
 
-export type CacheData = {
-  ids: CacheData$IDMap,
-  handles: {[type: string]: CacheData$Handles},
-  data: Array<GenericShopifyType|null>,
-};
+/**
+ * The [[CacheData]] is the data structure used for caching fetched
+ * Shopify objects. Objects are indexed by their Shopify ID (all types
+ * in the Shopify platform have an ID), and another index is managed
+ * for quickly looking up items by their type and handle.
+ *
+ * **NOTE:** You should never need to access this object directly.
+ * You should always use one of [[Client]]'s common methods that
+ * calls `get()`, or cache expiration will not work.
+ *
+ * **NOTE:** Shopify types can have colliding handles. For example,
+ * a [[Product]] with the handle `example`, and a [[Page]] with the
+ * same handle, can exist on the same store. So, we must index handles
+ * categorized by their type as well.
+ *
+ * **<u>Object Format:</u>**
+ * ```
+ * {
+ *   ids: {
+ *     1: { __type: 'page', id: 1, handle: 'example' }
+ *   },
+ *   handles: { "page": { "example": 1 } },
+ * }
+ * ```
+ */
+export interface CacheData {
+  /**
+   * An object with the Shopify ID as the key, and the Shopify
+   * entity as the value. All Shopify types include an ID.
+   */
+  ids: CacheData$IDMap;
+
+  /**
+   * An index with the key as the item handle, and the value
+   * being the ID of the item to resolve.
+   */
+  handles: {[type: string]: CacheData$Handles};
+}
 
 /**
  * Our cache includes an array of **real** values, full
@@ -48,84 +85,60 @@ export type CacheData = {
  * The ID map also allows us to have type-less indexing, with
  * deletion and addition managed by the Client.
  */
-export type CacheData$IDMap = {
-  [id: number]: number
-};
+export interface CacheData$IDMap { [id: number]: CacheData$Value; }
+
+/**
+ * A possible value in the [[CacheData]] element. Contains either
+ * a [[Product]], [[Page]], [[Collection]], or `null`.
+ */
+export type CacheData$Value = GenericShopifyType|null;
+
+/**
+ * An object used to quickly look up items by their handle **for a
+ * specific type**. One of these objects exists for each Shopify
+ * type to prevent accidental collisions between types.
+ */
 export type CacheData$Handles = {
   [handle: string]: number
 };
 
-// This is a simple array, items are found using the `CacheIDMap`
-export type CacheData$CleanValues = GenericShopifyType[];
-export type CacheData$Values = Array<GenericShopifyType|null>;
 
-
-export function indexSingleElement(
-    data: CacheData, item: GenericShopifyType): boolean {
-  const ids = data.ids;
-  const type = item.__type;
-  const nextIndex = data.data.length;
-  let wasCreated = false;
-
-  if (!(item.id in ids)) {
-    ids[item.id] = nextIndex;
-    data.data.push(item);
-    wasCreated = true;
-  }
+/**
+ * Given a Shopify entity, will index it and its children elements.
+ *
+ * @param {CacheData}  data  The cache data to augment the indexed data to
+ * @param {GenericShopifyType|null} item
+ *        The value in the cache can be a Shopify entity, or a null value
+ *        if it has expired.
+ */
+export function indexShopifyElement(
+    data: CacheData, item: GenericShopifyType): void {
+  // Assign the value, we don't care if it already exists
+  data.ids[item.id] = item;
 
   if ('handle' in item) {
-    const handle = (item as Product<Handle>).handle;
-
-    if (!(handle in data.handles[type])) {
-      data.handles[type][handle] = ids[item.id];
-    }
+    item = item as Product<Handle>;
+    data.handles[item.__type][item.handle] = item.id;
   }
 
   // Determine if it's a product
   if ('variants' in item) {
     const product = (item as Product<Handle>);
-
-    product.variants.forEach(variant => {
-      const variantId = variant.id;
-      const newPos = ids[variantId] || data.data.length;
-
-      if (!(variantId in ids)) {
-        ids[variantId] = newPos;
-        data.data.push(variant);
-      } else {
-        data.data[newPos] = variant;
-      }
-    });
+    product.variants.map((item) => indexShopifyElement(data, item));
   }
 
   // Determine if it's a collection
   if ('products' in item) {
     const collection = (item as Collection<Handle>);
-
-    collection.products.forEach(product => {
-      const productId = product.id;
-      const productHandle = product.handle;
-      const nextCacheIndex = data.data.length;
-
-      if (!(productId in ids)) {
-        data.ids[productId] = nextCacheIndex;
-        data.data.push(product);
-      }
-
-      if (!(productHandle in data.handles[ShopifyTypeEnum.Product])) {
-        data.handles[ShopifyTypeEnum.Product][productHandle] = nextCacheIndex;
-      }
-    });
+    collection.products.map((item) => indexShopifyElement(data, item));
   }
-
-  return wasCreated;
 }
 
-export function rebuildCache(givenValues: CacheData$Values): CacheData {
+export function rebuildCache(givenValues: CacheData$Value[]): CacheData {
   const newCache = generateEmptyCacheData();
 
   givenValues.forEach((item: GenericShopifyType|null) => {
-    if (!!item) indexSingleElement(newCache, item);
+    if (!!item) indexShopifyElement(newCache, item);
   });
 
   return newCache;

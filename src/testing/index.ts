@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import {Handle, Page, Product, ShopifyTypeEnum, Variant} from '../types';
+import {Collection, Handle, Page, Product, ShopifyTypeEnum, Variant} from '../types';
 
 export const STANDARD_DATE = '2010-01-01T00:00:00.000Z';
 export const TEST_EXPIRY_DATE = 1900000000000;
@@ -98,4 +98,22 @@ export function testCreateProduct(data: Partial<Product<Handle>>):
 
     ...data,
   };
+}
+
+export function testCreateCollection(data: Partial<Collection<Handle>> = {}) {
+  return {
+    id: -1,
+    title: '',
+    handle: '',
+    description: '',
+    image: null,
+    products_count: 0,
+    products: [],
+    updated_at: new Date(STANDARD_DATE),
+    published_at: new Date(STANDARD_DATE),
+    __expires: TEST_EXPIRY_DATE,
+    __type: ShopifyTypeEnum.Collection,
+
+    ...data,
+  } as Collection<Handle>;
 }

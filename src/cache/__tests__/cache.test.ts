@@ -1,54 +1,142 @@
-import {testCreatePage} from '../../testing/index';
+import {testCreateCollection, testCreatePage, testCreateProduct} from '../../testing/index';
 import {ShopifyTypeEnum} from '../../types';
-import {Cache, indexSingleElement} from '../index';
+import {Cache, indexShopifyElement} from '../index';
 
-
-it('readCache() works', () => {
-  const cache = new Cache();
-  const testPage = testCreatePage({
-    id: 100,
-    handle: 'asdas',
-  });
-
-  indexSingleElement(cache._cache, testPage);
-  const result = cache.readCache();
-
-  expect(result).toHaveLength(1);
-  expect(result).toMatchSnapshot();
-});
-
-describe('writeCache()', () => {
-  const page1 = testCreatePage({id: 1, handle: 'test1'});
-
-  it('creates new references for each', () => {
+describe('Cache', () => {
+  it('readCache() works', () => {
     const cache = new Cache();
-    const newCache = new Cache();
-    cache.set(ShopifyTypeEnum.Page, page1);
-
-    newCache.writeCache(cache._cache.data);
-    expect(newCache._cache.data).toEqual(cache._cache.data);
-
-    expect(newCache._cache.data !== cache._cache.data).toBeTruthy();
-    expect(newCache._cache.ids !== cache._cache.ids).toBeTruthy();
-    expect(
-        newCache._cache.handles[ShopifyTypeEnum.Collection] !==
-        cache._cache.handles[ShopifyTypeEnum.Collection])
-        .toBeTruthy();
-    expect(
-        newCache._cache.handles[ShopifyTypeEnum.Product] !==
-        cache._cache.handles[ShopifyTypeEnum.Product])
-        .toBeTruthy();
-    expect(
-        newCache._cache.handles[ShopifyTypeEnum.Page] !==
-        cache._cache.handles[ShopifyTypeEnum.Page])
-        .toBeTruthy();
-  });
-});
-
-describe(
-    'getCollection()',
-    () => {
-
+    const testPage = testCreatePage({
+      id: 100,
+      handle: 'asdas',
     });
 
-describe('getProduct()', () => {});
+    indexShopifyElement(cache._cache, testPage);
+    const result = cache.readCache();
+
+    expect(result).toHaveLength(1);
+    expect(result).toMatchSnapshot();
+  });
+
+  it('can copy data with writeCache()', () => {
+    const cache = new Cache();
+    const cache2 = new Cache();
+
+    const testPage = testCreatePage({
+      id: 100,
+      handle: 'asdas',
+    });
+
+    indexShopifyElement(cache._cache, testPage);
+    cache._cache.ids[100] = null;
+    const readCache = cache.readCache();
+    expect(readCache).toEqual([null]);
+
+    cache2.writeCache(readCache);
+    expect(cache2._cache.ids).toEqual({});
+  });
+
+  it('can find an object by ID', () => {
+    const cache = new Cache();
+    const page = testCreatePage({id: 1});
+
+    indexShopifyElement(cache._cache, page);
+    expect(cache._fetchId(1)).toEqual(page);
+  });
+
+  it('can handle fetching handles that do not exist', () => {
+    const cache = new Cache();
+    expect(cache._fetchHandle(ShopifyTypeEnum.Page, 'no-exist')).toEqual(null);
+  });
+
+  it('can fetch handles by individual type', () => {
+    const cache = new Cache();
+    const page = testCreatePage({id: 1, handle: 'example'});
+    const product = testCreateProduct({id: 2, handle: 'example'});
+    const collection = testCreateCollection({id: 3, handle: 'example'});
+
+    indexShopifyElement(cache._cache, page);
+    indexShopifyElement(cache._cache, product);
+    indexShopifyElement(cache._cache, collection);
+
+    expect(cache._fetchHandle(ShopifyTypeEnum.Page, 'example')).toEqual(page);
+    expect(cache._fetchHandle(ShopifyTypeEnum.Product, 'example'))
+        .toEqual(product);
+    expect(cache._fetchHandle(ShopifyTypeEnum.Collection, 'example'))
+        .toEqual(collection);
+  });
+
+  it('can fetch products by handle', () => {
+    const cache = new Cache();
+    const product = testCreateProduct({
+      id: 1,
+      handle: 'test',
+    });
+
+    cache.set(ShopifyTypeEnum.Product, product);
+
+    expect(cache.getPage('test')).toEqual(null);
+    expect(cache.getProduct('test')).toEqual(product);
+    expect(cache.getCollection('test')).toEqual(null);
+  });
+
+  it('can fetch pages by handle', () => {
+    const cache = new Cache();
+    const page = testCreatePage({
+      id: 1,
+      handle: 'test',
+    });
+
+    cache.set(ShopifyTypeEnum.Page, page);
+
+    expect(cache.getPage('test')).toEqual(page);
+    expect(cache.getProduct('test')).toEqual(null);
+    expect(cache.getCollection('test')).toEqual(null);
+  });
+
+  it('can fetch collections by handle', () => {
+    const cache = new Cache();
+    const collection = testCreateCollection({
+      id: 1,
+      handle: 'test',
+    });
+
+    indexShopifyElement(cache._cache, collection);
+
+    expect(cache.getPage('test')).toEqual(null);
+    expect(cache.getProduct('test')).toEqual(null);
+    expect(cache.getCollection('test')).toEqual(collection);
+  });
+
+  describe('cache item expiration', () => {
+    const testPage = testCreatePage({id: 1, handle: 'test'});
+
+    it('skips if already expired', () => {
+      const cache = new Cache();
+      cache.set(ShopifyTypeEnum.Page, testPage);
+      cache._cache.ids[1] = null;
+
+      // Is null, thus already set as expired
+      cache._delete_if_expired(1);
+      expect(cache._cache.ids[1]).toEqual(null);
+    });
+
+    it('skips if not expired', () => {
+      const cache = new Cache();
+      cache.set(ShopifyTypeEnum.Page, testPage);
+
+      // Should be valid still
+      cache._delete_if_expired(1);
+      expect(cache._cache.ids[1]).toEqual(testPage);
+    });
+
+    it('nulls the value if it has expired', () => {
+      const cache = new Cache();
+      const expiredPage = testCreatePage({id: 1});
+      cache.set(ShopifyTypeEnum.Page, expiredPage, 10);
+
+      // Should trigger an expiration
+      cache._delete_if_expired(1);
+      expect(cache._cache.ids[1]).toBeNull();
+    });
+  });
+});

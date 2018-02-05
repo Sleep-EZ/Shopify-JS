@@ -1,22 +1,32 @@
 import { Collection, GenericShopifyType, Handle, Page, Product, ShopifyTypeEnum } from '../types';
-import { CacheData, CacheData$Values } from './data';
+import { CacheData, CacheData$Value } from './data';
 /**
- * This will be the key that will be suffixed to every
- * complete Shopify cache entry that is saved in the cache.
+ * This _internal_ property name is suffixed to each object returned
+ * via Shopify-JS. Used by the caching system, determines when a cached
+ * object is deemed to be expired and should be re-fetched from Shopify.
  *
- * The current UNIX (epoch) timestamp is stored to allow
- * for cached items to expire after a short period of time,
- * ensuring accuracy.
+ * An example of how this "expires at" date is calculated:
+ * ```
+ *   __expires = Date.now() + (cacheTimeout * 1000)
+ * ```
+ *
+ * This value is an epoch timestamp in milliseconds. See the MDN documentation
+ * for
+ * [Date.now()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now)
+ * for detailed information about the JS timestamp format.
  */
 export declare const CACHE_TS_KEY = "__expires";
 /**
- * `OBJ_CACHE_DEFAULT_CACHE_EXPIRY` describes the time
- * in seconds until a record in the cache will be declared
- * out of date, and be removed during access-time.
+ * The default offset in seconds until an element stored in the cache will
+ * expire. For more information about cache expiration, view the documentation
+ * for the [[Client]] class.
+ *
+ * @default **300 seconds (5 min.)**
  */
 export declare const CACHE_DEFAULT_CACHE_EXPIRY = 300;
 /**
- * Options for the Cache object
+ * Configurable options that can be passed to the [[Cache]] instance during
+ * creation.
  */
 export declare const CACHE_DEFAULT_OPTS: CacheOptions;
 /**
@@ -51,7 +61,7 @@ export declare class Cache {
      *
      * @return {CacheData$Values} A copy of the current cache
      */
-    readCache(): CacheData$Values;
+    readCache(): CacheData$Value[];
     /**
      * Replaces the current cache data instance with a provided
      * one. This function is primarily intended to be used for
@@ -60,7 +70,7 @@ export declare class Cache {
      * @param {CacheData$Values} cache   The object cache to apply
      * @return {void}
      */
-    writeCache(cache: CacheData$Values): void;
+    writeCache(cache: CacheData$Value[]): void;
     getProduct<H extends Handle>(handle: H): Product<H> | null;
     getCollection<H extends Handle>(handle: H): Collection<H> | null;
     getPage<H extends Handle>(handle: H): Page<H> | null;
@@ -84,8 +94,23 @@ export declare class Cache {
      *
      * @param {number} position   The position of the object in the data cache
      */
-    _delete_if_expired(position: number): boolean;
+    _delete_if_expired(id: number): void;
 }
-export declare type CacheOptions = {
+/**
+ * Available options for the [[Cache]] that is created for a specific
+ * [[Client]] instance.
+ *
+ * This type is meant to be used internally, as it is actually a subset
+ * of options for the [[ClientOptions]] type. When the [[Client]] instance
+ * is created, it will automatically determine options that should be passed
+ * to the [[Client]].
+ */
+export interface CacheOptions {
+    /**
+     * This timeout describes in seconds how long until a fetched Shopify object
+     * will expire from the [[Cache]].
+     *
+     * @default [[CACHE_DEFAULT_CACHE_EXPIRY]]
+     */
     cacheTimeout: number;
-};
+}

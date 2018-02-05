@@ -1,7 +1,7 @@
 {
   "name": "@sleepez/shopify-js",
   "license": "AGPL-3.0",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "browser": "dist/main.js",
   "main": "dist/main.js",
   "types": "dist/build/index.d.ts",
@@ -34,7 +34,7 @@
     "pretest": "npm run compile",
     "test": "jest",
     "posttest": "npm run check",
-    "docs": "typedoc --excludePrivate --exclude **/*.test.ts --out docs/ src/",
+    "docs": "typedoc --excludePrivate --exclude **/*.test.ts --name \"Shopify-JS\" --out docs/ src/",
     "postdocs": "shx cp .nojekyll docs/.nojekyll"
   },
   "jest": {

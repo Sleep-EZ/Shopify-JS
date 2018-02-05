@@ -2,7 +2,6 @@
 
 exports[`CacheData generateEmptyCacheData() is unchanged 1`] = `
 Object {
-  "data": Array [],
   "handles": Object {
     "collection": Object {},
     "page": Object {},
