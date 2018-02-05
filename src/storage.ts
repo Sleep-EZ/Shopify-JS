@@ -19,7 +19,7 @@ import {CacheData$Value, CacheOptions} from './cache/index';
 import {CACHE_DEFAULT_OPTS} from './cache/index';
 import {isExpired} from './lib';
 
-function clean_expired(data: CacheData$Value[]|null): CacheData$Value[] {
+export function clean_expired(data: CacheData$Value[]|null): CacheData$Value[] {
   const cleaned: CacheData$Value[] = [];
   if (!data) return cleaned;
 

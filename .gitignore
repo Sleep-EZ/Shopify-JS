@@ -7,5 +7,6 @@ coverage/
 docs/
 yarn-error.log
 dist/**/*
+dist/**/__tests__/*
 !dist/**/*.d.ts
 !dist/**/*.js
