@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`readCache() works 1`] = `
+exports[`Cache readCache() works 1`] = `
 Array [
   Object {
     "__expires": 1900000000000,

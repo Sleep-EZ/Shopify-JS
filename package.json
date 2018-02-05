@@ -34,7 +34,7 @@
     "pretest": "npm run compile",
     "test": "jest",
     "posttest": "npm run check",
-    "docs": "typedoc --excludePrivate --exclude **/*.test.ts --out docs/ src/",
+    "docs": "typedoc --excludePrivate --exclude **/*.test.ts --name \"Shopify-JS\" --out docs/ src/",
     "postdocs": "shx cp .nojekyll docs/.nojekyll"
   },
   "jest": {

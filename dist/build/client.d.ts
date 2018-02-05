@@ -1,4 +1,4 @@
-import { Cache, CacheData$Values } from './cache/index';
+import { Cache, CacheData$Value } from './cache/index';
 import { StorageDriver } from './storage';
 import { Collection, GenericShopifyType, Handle, Page, Product, ShopifyTypeEnum } from './types';
 /**
@@ -52,7 +52,7 @@ export declare class Client {
      *                                  Shopify-JS client.
      */
     constructor(options: ClientOptions);
-    read(): Promise<CacheData$Values | null>;
+    read(): Promise<CacheData$Value[] | null>;
     write(): Promise<boolean>;
     /**
      * Generates a URL to a JSON Shopify object, most commonly used like so:

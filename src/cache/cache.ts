@@ -13,46 +13,47 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import {generateEmptyCacheData} from './index';
 import {getCurrentEpoch, isExpired} from '../lib';
 import {Collection, GenericShopifyType, Handle, Page, Product, ShopifyTypeEnum} from '../types';
-import {CacheData, CacheData$Values, indexSingleElement, rebuildCache} from './data';
+
+import {CacheData, CacheData$Value, indexShopifyElement, rebuildCache} from './data';
+import {generateEmptyCacheData} from './index';
 
 /**
- * This _internal_ property name is suffixed to each object returned 
+ * This _internal_ property name is suffixed to each object returned
  * via Shopify-JS. Used by the caching system, determines when a cached
  * object is deemed to be expired and should be re-fetched from Shopify.
- * 
- * An example of how this is calculated:
- * <pre>
- *   __expires = Date.now() + ([[CACHE_DEFAULT_CACHE_EXPIRY]] * 1000)
- * </pre>
- * 
+ *
+ * An example of how this "expires at" date is calculated:
+ * ```
+ *   __expires = Date.now() + (cacheTimeout * 1000)
+ * ```
+ *
  * This value is an epoch timestamp in milliseconds. See the MDN documentation
- * for [Date.now()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now)
+ * for
+ * [Date.now()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now)
  * for detailed information about the JS timestamp format.
  */
 export const CACHE_TS_KEY = '__expires';
 
 /**
- * The offset in seconds that will be added to the [[CACHE_TS_KEY]] value in
- * each Shopify object. This value determines when the cached object will be
- * declared out of date, and is automatically removed by the cache on access.
- * 
- * @default **300 seconds**
+ * The default offset in seconds until an element stored in the cache will
+ * expire. For more information about cache expiration, view the documentation
+ * for the [[Client]] class.
+ *
+ * @default **300 seconds (5 min.)**
  */
 export const CACHE_DEFAULT_CACHE_EXPIRY = 300;  // 5 minutes
 
-
 /**
- * Configurable options that can be passed to the [[Cache]] instance
- * during creation
+ * Configurable options that can be passed to the [[Cache]] instance during
+ * creation.
  */
 export const CACHE_DEFAULT_OPTS: CacheOptions = {
   /**
-   * The timeout in seconds, for more documentation see [[CACHE_DEFAULT_CACHE_EXPIRY]].
-   * 
-   * <pre>const cache = new Cache({ cacheTimeout: 60 }); // 1 minute</pre>
+   * The time until an element in the [[Cache]] expires.
+   *
+   * @default [[CACHE_DEFAULT_CACHE_EXPIRY]]
    */
   cacheTimeout: CACHE_DEFAULT_CACHE_EXPIRY,
 };
@@ -99,8 +100,8 @@ export class Cache {
    *
    * @return {CacheData$Values} A copy of the current cache
    */
-  readCache(): CacheData$Values {
-    return [...this._cache.data];
+  readCache(): CacheData$Value[] {
+    return [...Object.values(this._cache.ids)];
   }
 
   /**
@@ -111,7 +112,7 @@ export class Cache {
    * @param {CacheData$Values} cache   The object cache to apply
    * @return {void}
    */
-  writeCache(cache: CacheData$Values): void {
+  writeCache(cache: CacheData$Value[]): void {
     this._cache = rebuildCache(cache);
   }
 
@@ -137,19 +138,14 @@ export class Cache {
       GenericShopifyType|null {
     if (!(handle in this._cache.handles[type])) return null;
 
-    const pos = this._cache.handles[type][handle];
-    this._delete_if_expired(pos);
+    const id = this._cache.handles[type][handle];
+    this._delete_if_expired(id);
 
-    return (this._cache.data[pos] as GenericShopifyType | null);
+    return (this._cache.ids[id] as GenericShopifyType | null);
   }
 
   _fetchId(id: number): GenericShopifyType|null {
-    if (!(id in this._cache.ids)) return null;
-
-    const dataPos = this._cache.ids[id];
-    this._delete_if_expired(dataPos);
-
-    return (this._cache.data[dataPos] as GenericShopifyType | null);
+    return this._cache.ids[id] as GenericShopifyType | null;
   }
 
   /**
@@ -170,15 +166,7 @@ export class Cache {
     value.__expires = expiresAt;
     value.__type = type;
 
-    const itemWasCreated = indexSingleElement(this._cache, value);
-
-    // If there are no new additions, then this object already exists.
-    // Let's update it's value, and keep it's indexes.
-    if (!itemWasCreated) {
-      // Find the position of the value so we can update it
-      const pos = this._cache.ids[value.id];
-      this._cache.data[pos] = value;
-    }
+    indexShopifyElement(this._cache, value);
   }
 
   /**
@@ -188,22 +176,37 @@ export class Cache {
    *
    * @param {number} position   The position of the object in the data cache
    */
-  _delete_if_expired(position: number): boolean {
+  _delete_if_expired(id: number): void {
     // The item does not exist
-    const item = this._cache.data[position];
+    const item = this._cache.ids[id];
 
     // The item has already been deleted (expired)
-    if (item === null) return true;
+    if (item === null) return;
 
     // The cache item is valid, return immediately
-    if (!isExpired(item.__expires)) return true;
+    if (!isExpired(item.__expires)) return;
 
     // The cache item has expired, remove it
-    this._cache.data[position] = null;
-    return true;
+    this._cache.ids[id] = null;
+    return;
   }
 }
 
-export type CacheOptions = {
-  cacheTimeout: number,
-};
+/**
+ * Available options for the [[Cache]] that is created for a specific
+ * [[Client]] instance.
+ *
+ * This type is meant to be used internally, as it is actually a subset
+ * of options for the [[ClientOptions]] type. When the [[Client]] instance
+ * is created, it will automatically determine options that should be passed
+ * to the [[Client]].
+ */
+export interface CacheOptions {
+  /**
+   * This timeout describes in seconds how long until a fetched Shopify object
+   * will expire from the [[Cache]].
+   *
+   * @default [[CACHE_DEFAULT_CACHE_EXPIRY]]
+   */
+  cacheTimeout: number;
+}

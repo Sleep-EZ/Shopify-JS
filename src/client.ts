@@ -15,7 +15,7 @@
 
 import * as fetch from 'isomorphic-fetch';
 
-import {Cache, CACHE_DEFAULT_CACHE_EXPIRY, CacheData$Values, generateEmptyCacheData} from './cache/index';
+import {Cache, CACHE_DEFAULT_CACHE_EXPIRY, CacheData$Value, generateEmptyCacheData} from './cache/index';
 import {pluralizeType} from './lib';
 import {StorageDriver} from './storage';
 import {Collection, GenericShopifyType, Handle, Page, Product, ShopifyTypeEnum} from './types';
@@ -128,7 +128,7 @@ export class Client {
     this.storage = storage || new StorageDriver();
   }
 
-  read(): Promise<CacheData$Values|null> {
+  read(): Promise<CacheData$Value[]|null> {
     return this.storage.read().then(cacheData => {
       if (!cacheData) return null;
 
@@ -139,12 +139,12 @@ export class Client {
       });
 
       // Do *not* return by reference
-      return [...this.cache._cache.data];
+      return [...Object.values(this.cache._cache.ids)];
     });
   }
 
   write(): Promise<boolean> {
-    return this.storage.write(this.cache._cache.data);
+    return this.storage.write(Object.values(this.cache._cache.ids));
   }
 
   /**
@@ -386,7 +386,7 @@ export class Client {
 
     // Set the value and flush the storage driver
     this.cache.set(type, data);
-    this.storage.write(this.cache._cache.data);
+    this.storage.write(Object.values(this.cache._cache.ids));
 
     /**
      * This function is a callback handler for the 2nd collection
@@ -411,7 +411,7 @@ export class Client {
 
       // Write the merged collection item
       client.cache.set(ShopifyTypeEnum.Collection, finalResult);
-      client.storage.write(client.cache._cache.data);
+      client.storage.write(Object.values(client.cache._cache.ids));
 
       return finalResult;
     }
