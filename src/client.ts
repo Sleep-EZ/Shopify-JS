@@ -104,9 +104,11 @@ export class Client {
    *                                  Shopify-JS client.
    */
   constructor(options: ClientOptions) {
+    const urlRegex = /([a-z0-9|-]+\.)*[a-z0-9|-]+\.[a-z]+/i;
+
     // Ensure that a domain name is given and (mostly) valid
     if (!options || Object.keys(options).indexOf('domain') === -1 ||
-        !options.domain.length || !/[\w\d\-\.]+/.test(options.domain)) {
+        !options.domain.length || !urlRegex.test(options.domain)) {
       throw new Error(
           `You must provide the Shopify store's domain name\n` +
           `\texample: "my-store.myshopify.com"`);

@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Shopify-JS Client handles domain validation properly "" (empty) fails 1`] = `
+"You must provide the Shopify store's domain name
+	example: \\"my-store.myshopify.com\\""
+`;
+
+exports[`Shopify-JS Client handles domain validation properly ".com" fails 1`] = `
+"You must provide the Shopify store's domain name
+	example: \\"my-store.myshopify.com\\""
+`;
+
+exports[`Shopify-JS Client handles domain validation properly "invalid" fails 1`] = `
+"You must provide the Shopify store's domain name
+	example: \\"my-store.myshopify.com\\""
+`;
