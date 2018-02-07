@@ -85,9 +85,7 @@ export interface Variant extends Indexable, Expires {
     compare_at_price: number;
     fulfillment_service: string;
     inventory_management: string | null;
-    option1: string;
-    option2: string | null;
-    option3: string | null;
+    options: string[];
     created_at: Date;
     updated_at: Date;
     taxable: boolean;
@@ -128,4 +126,58 @@ export interface Collection<H> extends Indexable, Expires {
     image: Image | null;
     products_count: number;
     products: Array<Product<string>>;
+}
+export interface Image extends Indexable, Expires {
+    product_id: number;
+    position: number;
+    created_at: Date;
+    updated_at: Date;
+    width: number;
+    height: number;
+    src: string;
+    variant_ids: number[];
+}
+export interface CartLineItem<ID extends number> extends Expires {
+    id: ID;
+    discounted_price: number;
+    discounts: string[];
+    gift_card: boolean;
+    grams: number;
+    handle: Handle;
+    image: string;
+    key: string;
+    line_price: number;
+    original_line_price: number;
+    original_price: number;
+    price: number;
+    product_description: string;
+    product_id: number;
+    product_title: string;
+    product_type: string;
+    properties: null | {
+        [key: string]: string;
+    };
+    quantity: number;
+    requires_shipping: boolean;
+    sku: string;
+    taxable: boolean;
+    title: string;
+    total_discount: number;
+    url: string;
+    variant_id: number;
+    variant_options: [string] | [string, string] | [string, string, string];
+    variant_title: string;
+    vendor: string;
+}
+export interface Cart extends Indexable, Expires {
+    attributes: {};
+    item_count: number;
+    items: Array<CartLineItem<number>>;
+    note: string | null;
+    original_total_price: number;
+    requires_shipping: boolean;
+    token: string;
+    total_discount: number;
+    total_price: number;
+    total_weight: number;
 }

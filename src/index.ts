@@ -13,6 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-export * from './types';
 export {Client} from './client';
 export {ForageStorageDriver} from './storage';
+export {Cart, CartLineItem, Collection, Expires, GenericShopifyType, Handle, Image, Indexable, Option, Page, Product, ShopifyTypeEnum, Variant} from './types';
