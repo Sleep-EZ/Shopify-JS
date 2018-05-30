@@ -85,7 +85,9 @@ export interface CacheData {
  * The ID map also allows us to have type-less indexing, with
  * deletion and addition managed by the Client.
  */
-export interface CacheData$IDMap { [id: number]: CacheData$Value; }
+export interface CacheData$IDMap {
+  [id: number]: CacheData$Value;
+}
 
 /**
  * A possible value in the [[CacheData]] element. Contains either
